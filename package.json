@@ -17,6 +17,7 @@
   "dependencies": {
     "@fontsource/vazirmatn": "latest",
     "lucide-react": "latest",
+    "motion": "^14.0.0",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest"
