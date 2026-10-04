@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Search, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { AnimatedList, AnimatedListItem, TapButton } from '../components/AnimatedInteractions';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AssetRow, CoinIcon, PageHeader, SectionTitle, Sparkline } from '../components/UI';
@@ -25,18 +26,18 @@ export function MarketPage() {
       </div>
       <div className="market-search-tools">
         <label className="search-field market-search"><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="نام یا نماد دارایی" /></label>
-        <button className="square-icon-button" aria-label="تغییر ترتیب" onClick={() => setSort(sort === 'value' ? 'change' : 'value')}><SlidersHorizontal size={18} /></button>
+        <TapButton className="square-icon-button" aria-label="تغییر ترتیب" onClick={() => setSort(sort === 'value' ? 'change' : 'value')}><SlidersHorizontal size={18} /></TapButton>
       </div>
-      <div className="market-table-head"><span>دارایی</span><button onClick={() => setSort(sort === 'value' ? 'change' : 'value')}>{sort === 'value' ? 'ارزش دارایی' : 'تغییر روزانه'} <ArrowDown size={13} /></button></div>
-      <div className="market-list">
+      <div className="market-table-head"><span>دارایی</span><TapButton onClick={() => setSort(sort === 'value' ? 'change' : 'value')}>{sort === 'value' ? 'ارزش دارایی' : 'تغییر روزانه'} <ArrowDown size={13} /></TapButton></div>
+      <AnimatedList className="market-list">
         {assets.map((asset, index) => (
-          <div className="market-asset-card" key={asset.id}>
+          <AnimatedListItem className="market-asset-card" key={asset.id}>
             <AssetRow asset={asset} compact />
             <span className="market-rank">{formatFaNumber(index + 1)}</span>
-          </div>
+          </AnimatedListItem>
         ))}
-        {!assets.length ? <div className="empty-state compact-empty"><h2>نتیجه‌ای پیدا نشد</h2><p>عبارت دیگری را امتحان کنید.</p></div> : null}
-      </div>
+        {!assets.length ? <AnimatedListItem key="empty-market" className="empty-state compact-empty"><h2>نتیجه‌ای پیدا نشد</h2><p>عبارت دیگری را امتحان کنید.</p></AnimatedListItem> : null}
+      </AnimatedList>
       <p className="demo-note">قیمت‌ها در این نسخه نمایشی هستند.</p>
     </div>
   );
@@ -53,7 +54,7 @@ export function AssetDetailPage() {
   const positive = asset.dailyChange >= 0;
   return (
     <div className="page-body asset-detail-page">
-      <PageHeader title="جزئیات دارایی" backTo="/market" trailing={<button className="square-icon-button" aria-label="بازار" onClick={() => navigate('/market')}><SlidersHorizontal size={17} /></button>} />
+      <PageHeader title="جزئیات دارایی" backTo="/market" trailing={<TapButton className="square-icon-button" aria-label="بازار" onClick={() => navigate('/market')}><SlidersHorizontal size={17} /></TapButton>} />
       <div className="asset-detail-hero card-surface">
         <div className="asset-detail-coin"><CoinIcon asset={asset} size="lg" /><div><h2>{asset.name}</h2><span>{asset.symbol}</span></div></div>
         <strong className="asset-price">{formatToman(asset.priceToman)}</strong>
@@ -61,7 +62,7 @@ export function AssetDetailPage() {
         <div className="detail-chart"><Sparkline values={asset.sparkline} positive={positive} className="large-sparkline" /><div><span>۲۴ ساعت</span><span>۷ روز</span><span>۱ ماه</span><span>۱ سال</span></div></div>
         <div className="asset-holding"><span>موجودی شما</span><strong>{formatCrypto(asset.balance)} {asset.symbol}</strong><small>{formatToman(assetValueToman(asset))}</small></div>
       </div>
-      <div className="detail-actions"><button className="primary-button" onClick={() => navigate('/trade')}>معامله {asset.symbol}</button><button className="secondary-button" onClick={() => navigate('/deposit/crypto')}>واریز</button></div>
+      <div className="detail-actions"><TapButton className="primary-button" onClick={() => navigate('/trade')}>معامله {asset.symbol}</TapButton><TapButton className="secondary-button" onClick={() => navigate('/deposit/crypto')}>واریز</TapButton></div>
       <section className="detail-info card-surface"><SectionTitle title="درباره دارایی" /><p>اطلاعات قیمت و موجودی این صفحه برای نمایش تجربه‌ی کیف پول شبیه‌سازی شده است و به بازار زنده متصل نیست.</p></section>
     </div>
   );

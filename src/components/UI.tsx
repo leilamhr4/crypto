@@ -1,7 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, ChevronLeft, Clock3 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import type { Asset, Transaction } from '../domain/ledger';
 import { formatCrypto, formatFaNumber, formatToman } from '../domain/ledger';
+import { TapLink } from './AnimatedInteractions';
 
 export function PageHeader({
   title,
@@ -17,7 +17,7 @@ export function PageHeader({
   return (
     <header className="page-header">
       <div className="page-heading">
-        {backTo ? <Link className="back-button" to={backTo} aria-label="بازگشت"><ChevronLeft size={20} /></Link> : null}
+        {backTo ? <TapLink className="back-button" to={backTo} aria-label="بازگشت"><ChevronLeft size={20} /></TapLink> : null}
         <div>
           {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
           <h1>{title}</h1>
@@ -58,7 +58,7 @@ export function Sparkline({ values, positive, className = '' }: { values: number
 export function AssetRow({ asset, compact = false }: { asset: Asset; compact?: boolean }) {
   const value = asset.balance * asset.priceToman;
   return (
-    <Link to={`/market/${asset.symbol.toLowerCase()}`} className={`asset-row ${compact ? 'compact' : ''}`}>
+    <TapLink to={`/market/${asset.symbol.toLowerCase()}`} className={`asset-row ${compact ? 'compact' : ''}`}>
       <div className="asset-money" dir="rtl">
         <strong>{formatToman(value)}</strong>
         <span className={asset.dailyChange >= 0 ? 'change-positive' : 'change-negative'}>
@@ -71,7 +71,7 @@ export function AssetRow({ asset, compact = false }: { asset: Asset; compact?: b
         <span>{formatCrypto(asset.balance)} {asset.symbol}</span>
       </div>
       <CoinIcon asset={asset} />
-    </Link>
+    </TapLink>
   );
 }
 
@@ -84,7 +84,7 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
     cancelled: 'لغوشده',
   };
   return (
-    <Link className="transaction-row" to={`/transactions/${transaction.id}`}>
+    <TapLink className="transaction-row" to={`/transactions/${transaction.id}`}>
       <span className={`transaction-direction ${incoming ? 'incoming' : ''}`}>
         {incoming ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
       </span>
@@ -96,7 +96,7 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
         <strong className={incoming ? 'change-positive' : ''}>{incoming ? '+' : '−'}{formatFaNumber(transaction.amount, { maximumFractionDigits: 8 })}</strong>
         <small className={`status-${transaction.status}`}>{transaction.status === 'pending' ? <Clock3 size={11} /> : null}{statusText[transaction.status]}</small>
       </span>
-    </Link>
+    </TapLink>
   );
 }
 

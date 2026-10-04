@@ -1,6 +1,8 @@
 import { CalendarDays, CheckCircle2, Clock3, Filter, Search, XCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { PageHeader, TransactionRow } from '../components/UI';
 import { useLedger } from '../context/LedgerContext';
 import { formatFaNumber, type Transaction } from '../domain/ledger';
@@ -35,18 +37,25 @@ export function TransactionsPage() {
 
   return (
     <div className="page-body history-page">
-      <PageHeader title="تراکنش‌ها" backTo="/wallet" trailing={<button className="square-icon-button" aria-label="فیلتر وضعیت"><Filter size={18} /></button>} />
+      <PageHeader title="تراکنش‌ها" backTo="/wallet" trailing={<TapButton className="square-icon-button" aria-label="فیلتر وضعیت"><Filter size={18} /></TapButton>} />
       <label className="search-field history-search"><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجوی تراکنش" /></label>
       <div className="history-filters">
         {[['all', 'همه'], ['pending', 'در انتظار'], ['success', 'موفق'], ['failed', 'ناموفق']].map(([id, label]) => (
-          <button key={id} className={statusFilter === id ? 'active' : ''} onClick={() => setStatusFilter(id as typeof statusFilter)}>{label}</button>
+          <TapButton key={id} className={statusFilter === id ? 'active' : ''} aria-pressed={statusFilter === id} onClick={() => setStatusFilter(id as typeof statusFilter)}>
+            {statusFilter === id ? <motion.span layoutId="transaction-filter-indicator" className="filter-active-indicator" aria-hidden="true" /> : null}
+            <span className="filter-label">{label}</span>
+          </TapButton>
         ))}
       </div>
       <div className="history-date"><CalendarDays size={15} /> آخرین تراکنش‌ها</div>
-      <div className="transaction-list">
-        {transactions.map((transaction) => <TransactionRow transaction={transaction} key={transaction.id} />)}
-        {!transactions.length ? <div className="empty-state compact-empty"><h2>تراکنشی پیدا نشد</h2><p>فیلتر یا عبارت جست‌وجو را تغییر دهید.</p></div> : null}
-      </div>
+      <AnimatedList className="transaction-list">
+        {transactions.map((transaction) => (
+          <AnimatedListItem key={transaction.id}>
+            <TransactionRow transaction={transaction} />
+          </AnimatedListItem>
+        ))}
+        {!transactions.length ? <AnimatedListItem key="empty-transactions" className="empty-state compact-empty"><h2>تراکنشی پیدا نشد</h2><p>فیلتر یا عبارت جست‌وجو را تغییر دهید.</p></AnimatedListItem> : null}
+      </AnimatedList>
     </div>
   );
 }
@@ -78,7 +87,7 @@ export function TransactionDetailPage() {
         {transaction.fee ? <div className="review-line"><span>کارمزد</span><strong>{formatFaNumber(transaction.fee, { maximumFractionDigits: 8 })} {symbol}</strong></div> : null}
         {transaction.status === 'pending' ? <div className="pending-explainer">درخواست شما ثبت شده و در حال پردازش نمایشی است.</div> : null}
       </div>
-      <Link className="secondary-button full-button" to="/wallet">بازگشت به کیف پول</Link>
+      <TapLink className="secondary-button full-button" to="/wallet">بازگشت به کیف پول</TapLink>
     </div>
   );
 }

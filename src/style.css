@@ -48,6 +48,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; }
+a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 .app-stage {
   width: 100%;
@@ -96,6 +97,7 @@ button { cursor: pointer; }
   -webkit-overflow-scrolling: touch;
 }
 .route-content::-webkit-scrollbar { display: none; }
+.route-screen { min-height: 100%; }
 
 .bottom-nav {
   position: absolute;
@@ -112,6 +114,8 @@ button { cursor: pointer; }
   backdrop-filter: blur(20px);
 }
 .bottom-nav-item {
+  position: relative;
+  isolation: isolate;
   min-width: 72px;
   height: 60px;
   padding: 5px 9px 4px;
@@ -124,11 +128,13 @@ button { cursor: pointer; }
   color: #8791a7;
   font-size: 10px;
   line-height: 1.4;
-  transition: background .18s ease, color .18s ease;
+  transition: color .18s ease;
 }
-.bottom-nav-item.active { min-width: 85px; color: #7d84ff; background: #1d2540; }
+.bottom-nav-item.active { min-width: 85px; color: #7d84ff; background: transparent; }
 .bottom-nav-icon { display: grid; place-items: center; height: 26px; }
 .bottom-nav-item.active svg { color: #747aff; fill: rgba(78, 85, 255, .12); }
+.bottom-nav-indicator { position: absolute; z-index: 0; inset: 0; border-radius: 17px; background: #1d2540; pointer-events: none; }
+.bottom-nav-item > span:not(.bottom-nav-indicator) { position: relative; z-index: 1; }
 
 /* Wallet dashboard */
 .wallet-page { min-height: 100%; background: var(--bg); }
@@ -140,7 +146,7 @@ button { cursor: pointer; }
   background:
     radial-gradient(ellipse at 28% 88%, rgba(108, 120, 255, .72), transparent 43%),
     linear-gradient(174deg, #030717 0%, #061033 23%, #101fa4 54%, #253efa 78%, #7475ff 100%);
-  transition: height .25s ease;
+  transition: none;
 }
 .wallet-hero::after {
   position: absolute;
@@ -350,6 +356,8 @@ button { cursor: pointer; }
 .filter-list { margin: 5px 0 12px; display: flex; flex-wrap: nowrap; gap: 7px; overflow-x: auto; scrollbar-width: none; direction: rtl; }
 .filter-list::-webkit-scrollbar, .history-filters::-webkit-scrollbar { display: none; }
 .filter-list button, .history-filters button {
+  position: relative;
+  isolation: isolate;
   flex: 0 0 auto;
   height: 29px;
   padding: 0 13px;
@@ -360,7 +368,9 @@ button { cursor: pointer; }
   font-size: 10px;
   white-space: nowrap;
 }
-.filter-list button.active, .history-filters button.active { background: var(--blue); color: white; }
+.filter-list button.active, .history-filters button.active { background: transparent; color: white; }
+.filter-active-indicator { position: absolute; z-index: 0; inset: 0; border-radius: inherit; background: var(--blue); }
+.filter-label { position: relative; z-index: 1; }
 .asset-list { display: flex; flex-direction: column; gap: 10px; }
 .asset-row {
   position: relative;
@@ -377,7 +387,6 @@ button { cursor: pointer; }
   background: #151c2a;
   transition: background .16s ease, border .16s ease;
 }
-.asset-row:hover { background: #192237; border-color: rgba(174,188,255,.13); }
 .asset-money { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; font-size: 9px; line-height: 1.45; }
 .asset-money strong { font-size: 9px; font-weight: 600; white-space: nowrap; color: #e7eaf3; }
 .asset-money span { font-size: 9px; }
