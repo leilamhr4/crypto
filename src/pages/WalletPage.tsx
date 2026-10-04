@@ -1,6 +1,7 @@
 import {
   ArrowDownToLine,
   ArrowLeftRight,
+  ArrowUpRight,
   ArrowUpFromLine,
   ChevronDown,
   CircleHelp,
@@ -14,7 +15,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AssetRow, CoinIcon, EmptyState } from '../components/UI';
+import { AssetRow, CoinIcon, EmptyState, Sparkline } from '../components/UI';
 import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
 import { layoutTransition, stageVariants } from '../animation/motion-tokens';
 import { useLedger } from '../context/LedgerContext';
@@ -57,13 +58,19 @@ export function WalletPage() {
 
   const mainAmount = state.unit === 'toman' ? total : total / 100_000;
   const availableAmount = state.unit === 'toman' ? available : available / 100_000;
+  const performanceAmount = state.unit === 'toman' ? 1_245_450 : 12.45;
 
   if (searchParams.get('preview') === 'loading') return <WalletLoadingPreview />;
   if (searchParams.get('preview') === 'empty') return <WalletEmptyPreview />;
 
   return (
     <div className="wallet-page">
-      <motion.section className={`wallet-hero ${expanded ? 'hero-expanded' : 'hero-collapsed'}`} initial={false} animate={{ height: expanded ? 483 : 385 }} transition={{ height: layoutTransition }}>
+      <motion.section
+        className={`wallet-hero ${expanded ? 'hero-expanded' : 'hero-collapsed'}`}
+        initial={false}
+        animate={{ height: expanded ? 403 : 295 }}
+        transition={{ height: layoutTransition }}
+      >
         <div className="wallet-topline">
           <div className="wallet-top-actions">
             <TapButton className="round-action" aria-label="راهنما" onClick={() => navigate('/profile')}><CircleHelp size={17} /></TapButton>
@@ -73,50 +80,67 @@ export function WalletPage() {
           <h1>دارایی‌ها</h1>
         </div>
 
-        <div className="balance-switch" role="group" aria-label="واحد نمایش موجودی">
-          <TapButton className={state.unit === 'usdt' ? 'selected' : ''} onClick={() => dispatch({ type: 'unit/changed', unit: 'usdt' })}>تتر</TapButton>
-          <TapButton className={state.unit === 'toman' ? 'selected' : ''} onClick={() => dispatch({ type: 'unit/changed', unit: 'toman' })}>تومان</TapButton>
-        </div>
-
-        <div className="total-balance">
-          <span className="balance-caption">مجموع دارایی</span>
-          <div className="balance-value-row">
-            <span className="balance-unit">{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
-            <motion.strong key={`${state.unit}-${state.balanceHidden}`} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>{state.balanceHidden ? '••••••••' : formatFaNumber(mainAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}</motion.strong>
-            <TapButton className="balance-visibility" onClick={() => dispatch({ type: 'balance/toggled' })} aria-label={state.balanceHidden ? 'نمایش موجودی' : 'مخفی‌کردن موجودی'}>
-              {state.balanceHidden ? <EyeOff size={18} /> : <Eye size={18} />}
-            </TapButton>
+        <div className="balance-card">
+          <div className="balance-card-head">
+            <div className="balance-title">
+              <span className="balance-caption">مجموع دارایی</span>
+              <TapButton className="balance-visibility" onClick={() => dispatch({ type: 'balance/toggled' })} aria-label={state.balanceHidden ? 'نمایش موجودی' : 'مخفی‌کردن موجودی'}>
+                {state.balanceHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+              </TapButton>
+            </div>
+            <div className="balance-switch" role="group" aria-label="واحد نمایش موجودی">
+              <TapButton className={state.unit === 'usdt' ? 'selected' : ''} aria-pressed={state.unit === 'usdt'} onClick={() => dispatch({ type: 'unit/changed', unit: 'usdt' })}>تتر</TapButton>
+              <TapButton className={state.unit === 'toman' ? 'selected' : ''} aria-pressed={state.unit === 'toman'} onClick={() => dispatch({ type: 'unit/changed', unit: 'toman' })}>تومان</TapButton>
+            </div>
           </div>
-          <p className="available-balance">قابل استفاده: <b>{state.balanceHidden ? '••••••' : formatFaNumber(availableAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}</b> {state.unit === 'toman' ? 'تومان' : 'USDT'}</p>
-        </div>
 
-        <div className="performance-card">
-          <div className="mini-area" aria-hidden="true">
-            <svg viewBox="0 0 100 44" preserveAspectRatio="none">
-              <defs><linearGradient id="area-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#00dca0" stopOpacity=".5"/><stop offset="1" stopColor="#00dca0" stopOpacity="0"/></linearGradient></defs>
-              <path d="M0 37 Q9 24 16 33 T30 28 T44 30 T58 17 T69 19 T81 8 T93 20 T100 14 V44 H0Z" fill="url(#area-fill)" />
-              <path d="M0 37 Q9 24 16 33 T30 28 T44 30 T58 17 T69 19 T81 8 T93 20 T100 14" fill="none" stroke="#14d8a0" strokeWidth="1.6" />
-            </svg>
-            <small>+۲٫۴٪</small>
+          <div className="total-balance">
+            <div className="balance-value-row" dir="rtl">
+            {state.balanceHidden ? (
+              <strong>••••••••</strong>
+            ) : (
+              <motion.strong
+                key={`${state.unit}-${mainAmount}`}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {formatFaNumber(mainAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}
+              </motion.strong>
+            )}
+              <span className="balance-unit">{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
+            </div>
+            <p className="available-balance">قابل استفاده: <b>{state.balanceHidden ? '••••••' : formatFaNumber(availableAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}</b> {state.unit === 'toman' ? 'تومان' : 'USDT'}</p>
           </div>
-          <div className="performance-copy">
-            <span>سود یا ضرر کل دارایی</span>
-            <strong dir="rtl">+ {formatFaNumber(1_245_450)} تومان</strong>
+
+          <div className="performance-card">
+            <div className="performance-copy">
+              <span>سود یا ضرر کل دارایی</span>
+              <strong dir="rtl">+ {formatFaNumber(performanceAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })} {state.unit === 'toman' ? 'تومان' : 'USDT'}</strong>
+              <small className="performance-period" dir="rtl"><ArrowUpRight size={12} aria-hidden="true" /> ۲٫۴٪ نسبت به ماه گذشته</small>
+            </div>
+            <Sparkline values={[32, 35, 34, 38, 36, 39, 47, 48, 50, 61, 63, 74, 73, 82, 91]} positive className="wallet-performance-sparkline" />
           </div>
         </div>
 
         <AnimatePresence initial={false}>
           {expanded ? (
-            <motion.div key="allocation-card" className="allocation-card" variants={stageVariants} initial="initial" animate="animate" exit="exit">
-              <div className="allocation-legend">
-                <div><span className="allocation-dot bitcoin" /><span>بیت‌کوین</span><b>۴۴٪</b></div>
-                <div><span className="allocation-dot tether" /><span>تتر</span><b>۴۲٪</b></div>
-                <div><span className="allocation-dot ethereum" /><span>اتریوم</span><b>۱۴٪</b></div>
-              </div>
-              <div className="allocation-donut" aria-label="تنوع دارایی‌ها">
-                <span>۱۰۰٪</span>
-              </div>
-            </motion.div>
+          <motion.div
+            key="allocation-card"
+            className="allocation-card"
+            variants={stageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <div className="allocation-legend">
+              <div><span className="allocation-dot bitcoin" /><span>بیت‌کوین</span><b>۴۴٪</b></div>
+              <div><span className="allocation-dot tether" /><span>تتر</span><b>۴۲٪</b></div>
+              <div><span className="allocation-dot ethereum" /><span>اتریوم</span><b>۱۴٪</b></div>
+            </div>
+            <div className="allocation-donut" aria-label="تنوع دارایی‌ها">
+              <span>۱۰۰٪</span>
+            </div>
+          </motion.div>
           ) : null}
         </AnimatePresence>
         <TapButton className="expand-button" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>
@@ -152,12 +176,23 @@ export function WalletPage() {
         </div>
         <div className="filter-list" aria-label="فیلتر دارایی‌ها">
           {filters.map(({ id, label }) => (
-            <TapButton key={id} className={filter === id ? 'active' : ''} aria-pressed={filter === id} onClick={() => setFilter(id)}>{filter === id ? <motion.span layoutId="wallet-filter-indicator" className="filter-active-indicator" aria-hidden="true" /> : null}<span className="filter-label">{label}</span></TapButton>
+            <TapButton key={id} className={filter === id ? 'active' : ''} aria-pressed={filter === id} onClick={() => setFilter(id)}>
+              {filter === id ? <motion.span layoutId="wallet-filter-indicator" className="filter-active-indicator" aria-hidden="true" /> : null}
+              <span className="filter-label">{label}</span>
+            </TapButton>
           ))}
         </div>
         <AnimatedList className="asset-list">
-          {visibleAssets.map((asset) => <AnimatedListItem key={asset.id}><AssetRow asset={asset} /></AnimatedListItem>)}
-          {!visibleAssets.length ? <AnimatedListItem key="empty-assets"><EmptyState title="دارایی پیدا نشد" detail="نام یا نماد دارایی دیگری را جست‌وجو کنید." /></AnimatedListItem> : null}
+          {visibleAssets.map((asset) => (
+            <AnimatedListItem key={asset.id}>
+              <AssetRow asset={asset} />
+            </AnimatedListItem>
+          ))}
+          {!visibleAssets.length ? (
+            <AnimatedListItem key="empty-assets">
+              <EmptyState title="دارایی پیدا نشد" detail="نام یا نماد دارایی دیگری را جست‌وجو کنید." />
+            </AnimatedListItem>
+          ) : null}
         </AnimatedList>
         <div className="wallet-foot-links">
           <TapLink to="/transactions">مشاهده تراکنش‌ها <ChevronDown size={14} /></TapLink>

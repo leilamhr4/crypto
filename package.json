@@ -15,6 +15,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@fontsource/vazirmatn": "latest",
     "lucide-react": "latest",
     "motion": "^14.0.0",

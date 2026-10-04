@@ -56,11 +56,11 @@ export function AssetDetailPage() {
     <div className="page-body asset-detail-page">
       <PageHeader title="جزئیات دارایی" backTo="/market" trailing={<TapButton className="square-icon-button" aria-label="بازار" onClick={() => navigate('/market')}><SlidersHorizontal size={17} /></TapButton>} />
       <div className="asset-detail-hero card-surface">
-        <div className="asset-detail-coin"><CoinIcon asset={asset} size="lg" /><div><h2>{asset.name}</h2><span>{asset.symbol}</span></div></div>
+        <div className="asset-detail-coin"><CoinIcon asset={asset} size="lg" /><div><h2>{asset.name}</h2><span className="asset-ticker">{asset.symbol}</span></div></div>
         <strong className="asset-price">{formatToman(asset.priceToman)}</strong>
         <span className={`asset-change ${positive ? 'change-positive' : 'change-negative'}`}>{positive ? <ArrowUp size={15} /> : <ArrowDown size={15} />}{formatFaNumber(Math.abs(asset.dailyChange), { maximumFractionDigits: 2 })}٪ امروز</span>
         <div className="detail-chart"><Sparkline values={asset.sparkline} positive={positive} className="large-sparkline" /><div><span>۲۴ ساعت</span><span>۷ روز</span><span>۱ ماه</span><span>۱ سال</span></div></div>
-        <div className="asset-holding"><span>موجودی شما</span><strong>{formatCrypto(asset.balance)} {asset.symbol}</strong><small>{formatToman(assetValueToman(asset))}</small></div>
+        <div className="asset-holding"><span>موجودی شما</span><strong>{formatCrypto(asset.balance)} <span className="asset-ticker">{asset.symbol}</span></strong><small>{formatToman(assetValueToman(asset))}</small></div>
       </div>
       <div className="detail-actions"><TapButton className="primary-button" onClick={() => navigate('/trade')}>معامله {asset.symbol}</TapButton><TapButton className="secondary-button" onClick={() => navigate('/deposit/crypto')}>واریز</TapButton></div>
       <section className="detail-info card-surface"><SectionTitle title="درباره دارایی" /><p>اطلاعات قیمت و موجودی این صفحه برای نمایش تجربه‌ی کیف پول شبیه‌سازی شده است و به بازار زنده متصل نیست.</p></section>

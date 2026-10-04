@@ -12,17 +12,6 @@ const tabs = [
   { to: '/trade', label: 'معامله', icon: ArrowLeftRight, key: 'trade' },
 ];
 
-export function StatusBar() {
-  return (
-    <div className="status-bar" aria-label="وضعیت دستگاه">
-      <div className="status-icons" aria-hidden="true">
-        <svg viewBox="0 0 45 16"><path d="M3 13h3V9H3zm6 0h3V6H9zm6 0h3V3h-3zM23 5.5a7.5 7.5 0 0 1 11 0m-8.3 3a3.8 3.8 0 0 1 5.6 0M29.5 12.5h.1" fill="currentColor"/><rect x="37" y="3" width="15" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5"/><rect x="52.5" y="6" width="2" height="4" rx="1" fill="currentColor"/><rect x="39" y="5" width="10.5" height="6" rx="1" fill="currentColor"/></svg>
-      </div>
-      <span className="status-time">۹:۴۱</span>
-    </div>
-  );
-}
-
 export function AppShell() {
   const { pathname } = useLocation();
   const outlet = useOutlet();
@@ -42,7 +31,6 @@ export function AppShell() {
   return (
     <div className="app-stage">
       <div className="phone-shell">
-        <StatusBar />
         <main className="route-content" ref={routeContentRef}>
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div

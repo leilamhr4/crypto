@@ -68,7 +68,7 @@ export function AssetRow({ asset, compact = false }: { asset: Asset; compact?: b
       <Sparkline values={asset.sparkline} positive={asset.dailyChange >= 0} />
       <div className="asset-name" dir="rtl">
         <strong>{asset.name} <span className="asset-symbol">({asset.symbol})</span></strong>
-        <span>{formatCrypto(asset.balance)} {asset.symbol}</span>
+        <span>{formatCrypto(asset.balance)} <span className="asset-ticker">{asset.symbol}</span></span>
       </div>
       <CoinIcon asset={asset} />
     </TapLink>
