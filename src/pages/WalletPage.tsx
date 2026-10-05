@@ -1,9 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AltArrowDownIcon, ArrowRightUpIcon, Card2Icon, EyeClosedIcon, EyeIcon, HistoryIcon, MagnifierIcon, QuestionCircleIcon, SettingsIcon, TransferHorizontalIcon } from '../components/icons';
+import { AltArrowDownIcon, ArrowRightUpIcon, Card2Icon, EyeClosedIcon, EyeIcon, HistoryIcon, MagnifierIcon, QuestionCircleIcon, TransferHorizontalIcon } from '../components/icons';
 import { WalletSkeleton } from '../components/LoadingStates';
-import { AssetRow, CoinIcon, EmptyState, Sparkline } from '../components/UI';
+import { AssetRow, CoinIcon, EmptyState } from '../components/UI';
 import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
 import { allocationMotion, layoutTransition, stageVariants } from '../animation/motion-tokens';
 import { useLedger } from '../context/LedgerContext';
@@ -138,6 +138,116 @@ function BalanceAmount({
   );
 }
 
+function BalanceTrendChart({ values, positive }: { values: number[]; positive: boolean }) {
+  const width = 240;
+  const height = 48;
+  const lineRef = useRef<SVGPathElement>(null);
+  const endpointRef = useRef<SVGCircleElement>(null);
+  const safeValues = values.length > 1 ? values : [values[0] ?? 0, values[0] ?? 0];
+  const min = Math.min(...safeValues);
+  const range = Math.max(...safeValues) - min;
+  const points = safeValues.map((value, index) => ({
+    x: 3 + (index / (safeValues.length - 1)) * (width - 6),
+    y: range === 0 ? height / 2 : height - 14 - ((value - min) / range) * (height - 22),
+  }));
+
+  const linePath = points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+
+    const start = points[index - 1];
+    const previous = points[Math.max(0, index - 2)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const dx = point.x - start.x;
+    const startSlope = index === 1
+      ? (point.y - start.y) / dx
+      : (point.y - previous.y) / (point.x - previous.x);
+    const endSlope = index === points.length - 1
+      ? (point.y - start.y) / dx
+      : (next.y - start.y) / (next.x - start.x);
+    const low = Math.min(start.y, point.y);
+    const high = Math.max(start.y, point.y);
+    const control1Y = Math.max(low, Math.min(high, start.y + (startSlope * dx) / 3));
+    const control2Y = Math.max(low, Math.min(high, point.y - (endSlope * dx) / 3));
+
+    return `${path} C ${start.x + dx / 3} ${control1Y}, ${point.x - dx / 3} ${control2Y}, ${point.x} ${point.y}`;
+  }, '');
+
+  const first = points[0];
+  const last = points[points.length - 1];
+  const areaPath = `${linePath} L ${last.x} ${height - 1} L ${first.x} ${height - 1} Z`;
+
+  useLayoutEffect(() => {
+    const line = lineRef.current;
+    const endpoint = endpointRef.current;
+    if (!line || !endpoint) return;
+
+    const totalLength = line.getTotalLength();
+    if (!totalLength) {
+      line.style.visibility = 'visible';
+      endpoint.style.visibility = 'visible';
+      endpoint.setAttribute('cx', String(last.x));
+      endpoint.setAttribute('cy', String(last.y));
+      return;
+    }
+
+    line.style.strokeDasharray = '1';
+    line.style.strokeDashoffset = '1';
+    line.style.visibility = 'hidden';
+    endpoint.style.visibility = 'hidden';
+    endpoint.setAttribute('cx', String(first.x));
+    endpoint.setAttribute('cy', String(first.y));
+
+    const lineDuration = 2200;
+    const endpointDuration = 1550;
+    const easeOutCubic = (progress: number) => 1 - ((1 - progress) ** 3);
+    const startedAt = performance.now();
+    let frameId = 0;
+    const animate = (timestamp: number) => {
+      const elapsed = timestamp - startedAt;
+      const lineProgress = easeOutCubic(Math.min(1, elapsed / lineDuration));
+      const endpointProgress = easeOutCubic(Math.min(1, elapsed / endpointDuration));
+      const point = line.getPointAtLength(totalLength * endpointProgress);
+
+      line.style.strokeDashoffset = String(1 - lineProgress);
+      endpoint.setAttribute('cx', String(point.x));
+      endpoint.setAttribute('cy', String(point.y));
+      line.style.visibility = 'visible';
+      endpoint.style.visibility = 'visible';
+
+      if (elapsed < lineDuration) {
+        frameId = requestAnimationFrame(animate);
+      } else {
+        line.style.strokeDashoffset = '0';
+        endpoint.setAttribute('cx', String(last.x));
+        endpoint.setAttribute('cy', String(last.y));
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [linePath, last.x, last.y]);
+
+  return (
+    <svg
+      className={`balance-trend-chart ${positive ? 'positive' : 'negative'}`}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      role="img"
+      aria-label={`روند ${positive ? 'صعودی' : 'نزولی'} دارایی`}
+    >
+      <defs>
+        <linearGradient id="balance-trend-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity=".13" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path className="balance-trend-area" d={areaPath} />
+      <path ref={lineRef} className="balance-trend-line" d={linePath} pathLength={1} style={{ visibility: 'hidden' }} />
+      <circle ref={endpointRef} className="balance-trend-endpoint" cx={first.x} cy={first.y} r="4.1" style={{ visibility: 'hidden' }} />
+    </svg>
+  );
+}
+
 export function WalletPage() {
   const { state, dispatch } = useLedger();
   const navigate = useNavigate();
@@ -174,38 +284,33 @@ export function WalletPage() {
       <motion.section
         className={`wallet-hero ${expanded ? 'hero-expanded' : 'hero-collapsed'}`}
         initial={false}
-        animate={{ height: expanded ? 403 : 295 }}
+        animate={{ height: expanded ? 421 : 295 }}
         transition={{ height: prefersReducedMotion ? { duration: 0.01 } : layoutTransition }}
       >
         <div className="wallet-topline">
           <div className="wallet-top-actions">
             <TapButton className="round-action" aria-label="راهنما" onClick={() => navigate('/profile')}><QuestionCircleIcon size={17} /></TapButton>
             <TapButton className="round-action" aria-label="کارت‌های بانکی" onClick={() => navigate('/profile/cards')}><Card2Icon size={17} /></TapButton>
-            <TapButton className="round-action" aria-label="تنظیمات" onClick={() => navigate('/profile/settings')}><SettingsIcon size={17} /></TapButton>
           </div>
           <h1>دارایی‌ها</h1>
         </div>
 
         <div className="balance-card">
           <div className="balance-card-head">
-            <div className="balance-title">
+            <div className="balance-overview" dir="rtl">
+              <div className="balance-switch" role="group" aria-label="واحد نمایش موجودی">
+                <TapButton className={state.unit === 'usdt' ? 'selected' : ''} aria-pressed={state.unit === 'usdt'} onClick={() => dispatch({ type: 'unit/changed', unit: 'usdt' })}>
+                  {state.unit === 'usdt' ? <motion.span className="balance-switch-indicator" layoutId="wallet-balance-unit-indicator" initial={false} transition={prefersReducedMotion ? { duration: 0.01 } : balanceSwitchTransition} aria-hidden="true" /> : null}
+                  <span className="balance-switch-label">تتر</span>
+                </TapButton>
+                <TapButton className={state.unit === 'toman' ? 'selected' : ''} aria-pressed={state.unit === 'toman'} onClick={() => dispatch({ type: 'unit/changed', unit: 'toman' })}>
+                  {state.unit === 'toman' ? <motion.span className="balance-switch-indicator" layoutId="wallet-balance-unit-indicator" initial={false} transition={prefersReducedMotion ? { duration: 0.01 } : balanceSwitchTransition} aria-hidden="true" /> : null}
+                  <span className="balance-switch-label">تومان</span>
+                </TapButton>
+              </div>
               <span className="balance-caption">مجموع دارایی</span>
-              <TapButton className="balance-visibility" onClick={() => dispatch({ type: 'balance/toggled' })} aria-label={state.balanceHidden ? 'نمایش موجودی' : 'مخفی‌کردن موجودی'}>
-                {state.balanceHidden ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
-              </TapButton>
-            </div>
-            <div className="balance-switch" role="group" aria-label="واحد نمایش موجودی">
-              <TapButton className={state.unit === 'usdt' ? 'selected' : ''} aria-pressed={state.unit === 'usdt'} onClick={() => dispatch({ type: 'unit/changed', unit: 'usdt' })}>
-                {state.unit === 'usdt' ? <motion.span className="balance-switch-indicator" layoutId="wallet-balance-unit-indicator" initial={false} transition={prefersReducedMotion ? { duration: 0.01 } : balanceSwitchTransition} aria-hidden="true" /> : null}
-                <span className="balance-switch-label">تتر</span>
-              </TapButton>
-              <TapButton className={state.unit === 'toman' ? 'selected' : ''} aria-pressed={state.unit === 'toman'} onClick={() => dispatch({ type: 'unit/changed', unit: 'toman' })}>
-                {state.unit === 'toman' ? <motion.span className="balance-switch-indicator" layoutId="wallet-balance-unit-indicator" initial={false} transition={prefersReducedMotion ? { duration: 0.01 } : balanceSwitchTransition} aria-hidden="true" /> : null}
-                <span className="balance-switch-label">تومان</span>
-              </TapButton>
             </div>
           </div>
-
           <div className="total-balance">
             <div className="balance-value-row" dir="rtl">
               <CurrencySwap unit={state.unit} prefersReducedMotion={Boolean(prefersReducedMotion)} className="balance-value-swap">
@@ -217,6 +322,9 @@ export function WalletPage() {
                 />
                 <span className="balance-unit">{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
               </CurrencySwap>
+              <TapButton className="balance-visibility" onClick={() => dispatch({ type: 'balance/toggled' })} aria-label={state.balanceHidden ? 'نمایش موجودی' : 'مخفی‌کردن موجودی'}>
+                {state.balanceHidden ? <EyeClosedIcon size={18} /> : <EyeIcon size={18} />}
+              </TapButton>
             </div>
             <p className="available-balance">
               قابل استفاده:{' '}
@@ -235,9 +343,12 @@ export function WalletPage() {
                   + {formatFaNumber(performanceAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })} {state.unit === 'toman' ? 'تومان' : 'USDT'}
                 </CurrencySwap>
               </strong>
-              <small className="performance-period" dir="rtl"><ArrowRightUpIcon size={12} aria-hidden="true" /> ۲٫۴٪ نسبت به ماه گذشته</small>
+              <small className="performance-period" dir="rtl">
+                <span className="performance-change"><ArrowRightUpIcon size={12} aria-hidden="true" /> ۲٫۴٪</span>
+                <span>نسبت به ماه گذشته</span>
+              </small>
             </div>
-            <Sparkline values={[32, 35, 34, 38, 36, 39, 47, 48, 50, 61, 63, 74, 73, 82, 91]} positive className="wallet-performance-sparkline" />
+            <BalanceTrendChart values={[32, 35, 34, 38, 36, 39, 47, 48, 50, 61, 63, 74, 73, 82, 91]} positive />
           </div>
         </div>
 
@@ -338,9 +449,14 @@ export function WalletPage() {
           ))}
         </div>
         <AnimatedList className="asset-list" withPresence>
-          {visibleAssets.map((asset) => (
+          {visibleAssets.map((asset, index) => (
             <AnimatedListItem key={asset.id}>
-              <AssetRow asset={asset} />
+              <AssetRow
+                asset={asset}
+                walletLayout
+                usdRateToman={state.assets.find((item) => item.symbol === 'USDT')?.priceToman ?? 0}
+                trendCycleOffsetMs={index * 1_500}
+              />
             </AnimatedListItem>
           ))}
           {!visibleAssets.length ? (

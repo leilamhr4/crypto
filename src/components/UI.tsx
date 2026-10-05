@@ -1,9 +1,19 @@
 import type { Asset, Transaction } from '../domain/ledger';
 import { formatCrypto, formatFaNumber, formatToman } from '../domain/ledger';
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { TapButton, TapLink } from './AnimatedInteractions';
 import { AddIcon, AltArrowLeftIcon, ArrowDownIcon, ArrowLeftDownIcon, ArrowRightUpIcon, ArrowUpIcon, ClockCircleIcon, TransferHorizontalIcon, Wallet2Icon } from './icons';
+
+const usdFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const walletTrendCycleMs = 9_000;
+const walletTrendReadoutMs = 1_980;
 
 export function PageHeader({
   title,
@@ -110,8 +120,110 @@ export function Sparkline({ values, positive, className = '', area = false, endp
   );
 }
 
-export function AssetRow({ asset, compact = false }: { asset: Asset; compact?: boolean }) {
+export function AssetRow({
+  asset,
+  compact = false,
+  walletLayout = false,
+  usdRateToman = 0,
+  trendCycleOffsetMs = 0,
+}: {
+  asset: Asset;
+  compact?: boolean;
+  walletLayout?: boolean;
+  usdRateToman?: number;
+  trendCycleOffsetMs?: number;
+}) {
+  const prefersReducedMotion = useReducedMotion();
+  const [showDailyChange, setShowDailyChange] = useState(false);
   const value = asset.balance * asset.priceToman;
+  const dailyChangeLabel = `${asset.dailyChange >= 0 ? '+' : '−'}${formatFaNumber(Math.abs(asset.dailyChange), { maximumFractionDigits: 2 })}٪`;
+  const usdValueLabel = usdRateToman > 0 ? usdFormatter.format(value / usdRateToman) : 'نامشخص';
+
+  useEffect(() => {
+    if (!walletLayout || prefersReducedMotion) return;
+
+    let cycleInterval: number;
+    let hideTimeout: number;
+    const startTimeout = window.setTimeout(() => {
+      const revealDailyChange = () => {
+        setShowDailyChange(true);
+        hideTimeout = window.setTimeout(() => setShowDailyChange(false), walletTrendReadoutMs);
+      };
+
+      revealDailyChange();
+      cycleInterval = window.setInterval(revealDailyChange, walletTrendCycleMs);
+    }, walletTrendCycleMs + Math.max(0, trendCycleOffsetMs));
+
+    return () => {
+      window.clearTimeout(startTimeout);
+      window.clearInterval(cycleInterval);
+      window.clearTimeout(hideTimeout);
+    };
+  }, [prefersReducedMotion, trendCycleOffsetMs, walletLayout]);
+
+  if (walletLayout) {
+    const showTrendValue = Boolean(prefersReducedMotion) || showDailyChange;
+    const trendTransition = prefersReducedMotion ? { duration: 0.01 } : { duration: 0.42, ease: 'easeOut' as const };
+    const trendExit = prefersReducedMotion
+      ? { opacity: 0, transition: { duration: 0.01 } }
+      : { opacity: 0, y: -4, filter: 'blur(1px)', transition: { duration: 0.27, ease: 'easeIn' as const } };
+
+    return (
+      <TapLink
+        to={`/market/${asset.symbol.toLowerCase()}`}
+        className="asset-row asset-row--wallet"
+        aria-label={`${asset.name} (${asset.symbol})، موجودی ${formatCrypto(asset.balance)} ${asset.symbol}، ارزش ${formatToman(value)}، معادل ${usdValueLabel}، تغییر روزانه ${dailyChangeLabel}`}
+      >
+        <div className="asset-wallet-identity" dir="rtl">
+          <CoinIcon asset={asset} />
+          <div className="asset-name">
+            <strong>{asset.name} <span className="asset-symbol">({asset.symbol})</span></strong>
+            <span>{formatCrypto(asset.balance)} <span className="asset-ticker">{asset.symbol}</span></span>
+          </div>
+        </div>
+
+        <div className={`asset-wallet-chart ${asset.dailyChange >= 0 ? 'trend-positive' : 'trend-negative'}`} aria-hidden="true">
+          <div className="asset-trend-stage">
+            <AnimatePresence initial={false} mode="wait">
+              {showTrendValue ? (
+                <motion.div
+                  key="daily-change"
+                  className={`asset-trend-readout ${asset.dailyChange >= 0 ? 'change-positive' : 'change-negative'}`}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 5, filter: 'blur(1px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={trendExit}
+                  transition={trendTransition}
+                >
+                  <span className="asset-trend-readout-value" dir="ltr">
+                    {asset.dailyChange >= 0 ? <ArrowUpIcon size={11} /> : <ArrowDownIcon size={11} />}
+                    <strong>{dailyChangeLabel}</strong>
+                  </span>
+                  <small>تغییر روزانه</small>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="sparkline"
+                  className="asset-trend-graph"
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 4, filter: 'blur(1px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={trendExit}
+                  transition={trendTransition}
+                >
+                  <Sparkline values={asset.sparkline} positive={asset.dailyChange >= 0} className="asset-sparkline" area endpoint />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="asset-wallet-value" dir="rtl">
+          <strong>{formatToman(value)}</strong>
+          <small><span>ارزش دلاری</span><b dir="ltr">{usdValueLabel}</b></small>
+        </div>
+      </TapLink>
+    );
+  }
+
   return (
     <TapLink
       to={`/market/${asset.symbol.toLowerCase()}`}
