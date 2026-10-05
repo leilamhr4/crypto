@@ -31,8 +31,8 @@ const allocationAssets = [
 ] as const;
 type AllocationAssetId = (typeof allocationAssets)[number]['id'];
 const allocationTotalPercent = allocationAssets.reduce((total, asset) => total + asset.percent, 0);
-const allocationDonutCircumference = 2 * Math.PI * 34;
-const allocationDonutGap = 2.2;
+const allocationDonutCircumference = 2 * Math.PI * 42;
+const allocationDonutGap = 2.8;
 const allocationDonutLength = allocationDonutCircumference - allocationDonutGap * allocationAssets.length;
 
 function AnimatedBalanceAmount({
@@ -295,8 +295,9 @@ function AllocationDonut({
 
   return (
     <div className="allocation-visual">
-      <svg className="allocation-donut" viewBox="0 0 88 88" aria-hidden="true">
-        <circle className="allocation-donut-track" cx="44" cy="44" r="34" transform="rotate(-90 44 44)" />
+      <svg className="allocation-donut" viewBox="0 0 100 100" aria-hidden="true">
+        <circle className="allocation-donut-rim" cx="50" cy="50" r="48" />
+        <circle className="allocation-donut-track" cx="50" cy="50" r="42" transform="rotate(-90 50 50)" />
         {allocationAssets.map((asset, index) => {
           const segmentLength = allocationDonutLength * asset.percent / allocationTotalPercent;
           const strokeDasharray = `${segmentLength} ${allocationDonutCircumference - segmentLength}`;
@@ -307,20 +308,20 @@ function AllocationDonut({
           return (
             <motion.circle
               key={asset.id}
-              className={`allocation-donut-segment ${asset.id}`}
-              cx="44"
-              cy="44"
-              r="34"
+              className={`allocation-donut-segment ${asset.id} ${isActive ? 'is-active' : ''}`}
+              cx="50"
+              cy="50"
+              r="42"
               fill="none"
-              strokeWidth="7.5"
+              strokeWidth="8.5"
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="butt"
-              transform="rotate(-90 44 44)"
+              transform="rotate(-90 50 50)"
               initial={prefersReducedMotion ? false : { strokeDasharray: `0 ${allocationDonutCircumference}` }}
               animate={{
                 strokeDasharray,
-                strokeWidth: activeId ? (isActive ? 9 : 7) : 7.5,
-                opacity: activeId && !isActive ? 0.3 : 1,
+                strokeWidth: activeId ? (isActive ? 10.5 : 7.2) : 8.5,
+                opacity: activeId && !isActive ? 0.34 : 1,
               }}
               transition={{
                 strokeDasharray: prefersReducedMotion
@@ -333,6 +334,7 @@ function AllocationDonut({
           );
         })}
       </svg>
+      <div className="allocation-donut-core" aria-hidden="true" />
       <div className="allocation-donut-center" aria-live={activeAsset ? 'polite' : 'off'} aria-atomic="true">
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
