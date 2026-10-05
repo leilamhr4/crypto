@@ -40,14 +40,35 @@ function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number
   const amount = useMotionValue(0);
   const initialValue = useRef(value);
   const hasFinishedInitialCount = useRef(false);
+  const [displayedAmount, setDisplayedAmount] = useState(() =>
+    formatFaNumber(0, { maximumFractionDigits }),
+  );
+  const displayedAmountRef = useRef(displayedAmount);
   const formattedAmount = useTransform(amount, (current) =>
     formatFaNumber(current, { maximumFractionDigits }),
   );
 
   useEffect(() => {
+    let lastDisplayedAt = Number.NEGATIVE_INFINITY;
+    const unsubscribe = formattedAmount.on('change', (nextAmount) => {
+      const now = performance.now();
+      if (nextAmount === displayedAmountRef.current || now - lastDisplayedAt < 34) return;
+
+      lastDisplayedAt = now;
+      displayedAmountRef.current = nextAmount;
+      setDisplayedAmount(nextAmount);
+    });
+
+    return unsubscribe;
+  }, [formattedAmount]);
+
+  useEffect(() => {
     if (hasFinishedInitialCount.current || value !== initialValue.current || prefersReducedMotion) {
       hasFinishedInitialCount.current = true;
       amount.set(value);
+      const finalAmount = formatFaNumber(value, { maximumFractionDigits });
+      displayedAmountRef.current = finalAmount;
+      setDisplayedAmount(finalAmount);
       return;
     }
 
@@ -57,11 +78,14 @@ function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number
       ease: [0.42, 0, 0.2, 1],
       onComplete: () => {
         hasFinishedInitialCount.current = true;
+        const finalAmount = formatFaNumber(value, { maximumFractionDigits });
+        displayedAmountRef.current = finalAmount;
+        setDisplayedAmount(finalAmount);
       },
     });
 
     return () => controls.stop();
-  }, [amount, prefersReducedMotion, value]);
+  }, [amount, maximumFractionDigits, prefersReducedMotion, value]);
 
   return (
     <motion.strong
@@ -71,7 +95,30 @@ function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number
       transition={{ duration: 0.6, ease: [0.42, 0, 0.2, 1] }}
       style={{ fontVariantNumeric: 'tabular-nums' }}
     >
-      {formattedAmount}
+      <span style={{ display: 'inline-grid', lineHeight: 1 }}>
+        <AnimatePresence initial={false}>
+          <motion.span
+            key={displayedAmount}
+            initial={{ opacity: 0, y: 1.5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{
+              opacity: 0,
+              y: -1,
+              transition: {
+                opacity: { duration: 0.055, ease: 'easeIn' },
+                y: { duration: 0.075, ease: 'easeIn' },
+              },
+            }}
+            transition={{
+              opacity: { duration: 0.055, ease: 'easeOut' },
+              y: { duration: 0.085, ease: [0.22, 1, 0.36, 1] },
+            }}
+            style={{ gridArea: '1 / 1', whiteSpace: 'nowrap' }}
+          >
+            {displayedAmount}
+          </motion.span>
+        </AnimatePresence>
+      </span>
     </motion.strong>
   );
 }
