@@ -104,7 +104,7 @@ export function Sparkline({ values, positive, className = '', area = false, endp
   return (
     <svg className={`sparkline ${positive ? 'positive' : 'negative'} ${className}`} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
       {area ? <polygon className="sparkline-area" points={`0,${height} ${points.join(' ')} ${width},${height}`} /> : null}
-      <polyline points={points.join(' ')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={points.join(' ')} pathLength={1} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {endpoint ? <circle className="sparkline-endpoint" cx={width} cy={lastY} r="2.4" /> : null}
     </svg>
   );
