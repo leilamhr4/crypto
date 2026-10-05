@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
-import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion, type HTMLMotionProps } from 'motion/react';
 import { Link, NavLink } from 'react-router-dom';
 import { layoutTransition, listItemVariants, stageVariants, tapTransition } from '../animation/motion-tokens';
 
@@ -7,11 +7,12 @@ const MotionLink = motion.create(Link);
 const MotionNavLink = motion.create(NavLink);
 
 export function TapButton({ children, disabled, ...props }: HTMLMotionProps<'button'>) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.button
       {...props}
       disabled={disabled}
-      whileTap={disabled ? undefined : { scale: 0.97 }}
+      whileTap={disabled || prefersReducedMotion ? undefined : { scale: 0.97 }}
       transition={tapTransition}
     >
       {children}
@@ -23,8 +24,12 @@ export function TapLink(props: ComponentPropsWithoutRef<typeof MotionLink>) {
   return <MotionLink {...props} whileTap={{ scale: 0.985 }} transition={tapTransition} />;
 }
 
-export function TapNavLink(props: ComponentPropsWithoutRef<typeof MotionNavLink>) {
-  return <MotionNavLink {...props} whileTap={{ scale: 0.96 }} transition={tapTransition} />;
+export function TapNavLink({
+  tapScale = 0.96,
+  ...props
+}: ComponentPropsWithoutRef<typeof MotionNavLink> & { tapScale?: number }) {
+  const prefersReducedMotion = useReducedMotion();
+  return <MotionNavLink {...props} whileTap={prefersReducedMotion ? undefined : { scale: tapScale }} transition={tapTransition} />;
 }
 
 export function TransitionStage({

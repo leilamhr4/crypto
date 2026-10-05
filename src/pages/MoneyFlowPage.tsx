@@ -1,6 +1,6 @@
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CheckCircle2, Clock3, Copy, QrCode, ShieldCheck } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState, type FormEvent } from 'react';
+import { ArrowDownToLineIcon, ArrowUpFromLineIcon, CheckCircleIcon, ClockCircleIcon, CopyIcon, QrCodeIcon, ShieldCheckIcon, TransferHorizontalIcon } from '../components/icons';
 import { useLocation } from 'react-router-dom';
 import { TapButton, TapLink, TransitionStage } from '../components/AnimatedInteractions';
 import { PageHeader } from '../components/UI';
@@ -119,7 +119,7 @@ export function MoneyFlowPage() {
       <TransitionStage stage={stage}>
       {stage === 'result' && resultTransaction ? (
         <div className="result-card card-surface">
-          <motion.span key={isPendingResult ? 'pending' : 'success'} className={`result-icon ${isPendingResult ? 'waiting' : 'success'}`} initial={{ scale: 0.72, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 22 }}>{isPendingResult ? <Clock3 size={29} /> : <CheckCircle2 size={31} />}</motion.span>
+          <motion.span key={isPendingResult ? 'pending' : 'success'} className={`result-icon ${isPendingResult ? 'waiting' : 'success'}`} initial={{ scale: 0.72, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 22 }}>{isPendingResult ? <ClockCircleIcon size={29} /> : <CheckCircleIcon size={31} />}</motion.span>
           <h2>{isPendingResult ? 'درخواست برداشت ثبت شد' : 'عملیات با موفقیت انجام شد'}</h2>
           <p>{isPendingResult ? 'درخواست شما در صف پردازش قرار دارد. این وضعیت به‌صورت خودکار در نسخه‌ی نمایشی تکمیل می‌شود.' : `${formatFaNumber(resultTransaction.amount, { maximumFractionDigits: isCrypto ? 8 : 0 })} ${isCrypto ? asset.symbol : 'تومان'}`}</p>
           <div className="result-summary"><span>شناسه تراکنش</span><b>{resultTransaction.id}</b><span>وضعیت</span><b className={isPendingResult ? 'status-pending' : 'change-positive'}>{isPendingResult ? 'در حال پردازش' : 'موفق'}</b></div>
@@ -134,9 +134,13 @@ export function MoneyFlowPage() {
           ['/withdraw/crypto', 'برداشت رمزارز'],
           ['/deposit/toman', 'واریز تومان'],
           ['/withdraw/toman', 'برداشت تومان'],
-        ].map(([to, label]) => <TapLink to={to!} className={pathname === to ? 'active' : ''} key={to}>{label}</TapLink>)}
+        ].map(([to, label]) => <TapLink to={to!} className={pathname === to ? 'active' : ''} aria-current={pathname === to ? 'page' : undefined} key={to}>{label}</TapLink>)}
       </nav>
-      <div className="flow-stepper"><span className="complete">۱ اطلاعات</span><i /><span className={stage !== 'form' ? 'complete' : ''}>۲ بررسی</span><i /><span>۳ نتیجه</span></div>
+      <div className="flow-stepper" aria-label="مراحل درخواست">
+        <span className={stage === 'form' ? 'current' : 'complete'} aria-current={stage === 'form' ? 'step' : undefined}>۱ اطلاعات</span><i />
+        <span className={stage === 'review' ? 'current' : ''} aria-current={stage === 'review' ? 'step' : undefined}>۲ بررسی</span><i />
+        <span>۳ نتیجه</span>
+      </div>
       {stage === 'form' ? (
         <form className="flow-card card-surface" onSubmit={continueToReview}>
           {isCrypto ? (
@@ -151,10 +155,10 @@ export function MoneyFlowPage() {
               </select>
               {config.direction === 'in' ? (
                 <div className="deposit-address-box">
-                  <div className="demo-qr" aria-label="کد QR نمونه"><QrCode size={92} strokeWidth={1.3} /></div>
+                  <div className="demo-qr" aria-label="کد QR نمونه"><QrCodeIcon size={92} strokeWidth={1.3} /></div>
                   <span className="demo-chip">نشانی نمونه</span>
                   <p>برای واریز واقعی استفاده نکنید</p>
-                  <div className="address-line"><code dir="ltr">{demoAddress}</code><TapButton type="button" onClick={copyAddress} aria-label="کپی نشانی"><Copy size={16} /></TapButton></div>
+                  <div className="address-line"><code dir="ltr">{demoAddress}</code><TapButton type="button" onClick={copyAddress} aria-label="کپی نشانی"><CopyIcon size={16} /></TapButton></div>
                   <AnimatePresence initial={false}>{copied ? <motion.small key="copied" className="copy-feedback" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>نشانی کپی شد</motion.small> : null}</AnimatePresence>
                 </div>
               ) : (
@@ -179,12 +183,12 @@ export function MoneyFlowPage() {
           <div className="amount-helper-row"><span>{config.direction === 'out' ? `موجودی قابل برداشت: ${isCrypto ? `${formatCrypto(available)} ${asset.symbol}` : formatToman(available)}` : 'مبلغ را به‌صورت نمونه وارد کنید'}</span>{config.direction === 'out' ? <TapButton type="button" onClick={() => setAmount(String(spendable))}>حداکثر</TapButton> : null}</div>
 
           {error ? <p className="form-error" role="alert">{error}</p> : null}
-          <div className="flow-security"><ShieldCheck size={16} /><span>{isCrypto ? `انتخاب شبکه: ${network}` : 'پرداخت شبیه‌سازی‌شده با کارت بانکی'}</span></div>
-          <TapButton className="primary-button full-button" type="submit">بررسی درخواست <ArrowLeftRight size={17} /></TapButton>
+          <div className="flow-security"><ShieldCheckIcon size={16} /><span>{isCrypto ? `انتخاب شبکه: ${network}` : 'پرداخت شبیه‌سازی‌شده با کارت بانکی'}</span></div>
+          <TapButton className="primary-button full-button" type="submit">بررسی درخواست <TransferHorizontalIcon size={17} /></TapButton>
         </form>
       ) : (
         <div className="review-card card-surface">
-          <span className="review-main-icon">{config.direction === 'in' ? <ArrowDownToLine size={26} /> : <ArrowUpFromLine size={26} />}</span>
+          <span className="review-main-icon">{config.direction === 'in' ? <ArrowDownToLineIcon size={26} /> : <ArrowUpFromLineIcon size={26} />}</span>
           <h2>بررسی و تأیید</h2>
           <p className="review-lead">اطلاعات درخواست را پیش از تأیید بررسی کنید.</p>
           <div className="review-line"><span>نوع عملیات</span><strong>{config.title}</strong></div>

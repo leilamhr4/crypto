@@ -1,6 +1,6 @@
-import { CalendarDays, CheckCircle2, Clock3, Filter, Search, XCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
+import { CalendarIcon, CheckCircleIcon, ClockCircleIcon, CloseCircleIcon, MagnifierIcon } from '../components/icons';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageHeader, TransactionRow } from '../components/UI';
@@ -37,8 +37,8 @@ export function TransactionsPage() {
 
   return (
     <div className="page-body history-page">
-      <PageHeader title="تراکنش‌ها" backTo="/wallet" trailing={<TapButton className="square-icon-button" aria-label="فیلتر وضعیت"><Filter size={18} /></TapButton>} />
-      <label className="search-field history-search"><Search size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجوی تراکنش" /></label>
+      <PageHeader title="تراکنش‌ها" backTo="/wallet" />
+      <label className="search-field history-search"><MagnifierIcon size={19} /><input aria-label="جست‌وجوی تراکنش" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجوی تراکنش" /></label>
       <div className="history-filters">
         {[['all', 'همه'], ['pending', 'در انتظار'], ['success', 'موفق'], ['failed', 'ناموفق']].map(([id, label]) => (
           <TapButton key={id} className={statusFilter === id ? 'active' : ''} aria-pressed={statusFilter === id} onClick={() => setStatusFilter(id as typeof statusFilter)}>
@@ -47,7 +47,7 @@ export function TransactionsPage() {
           </TapButton>
         ))}
       </div>
-      <div className="history-date"><CalendarDays size={15} /> آخرین تراکنش‌ها</div>
+      <div className="history-date"><CalendarIcon size={15} /> آخرین تراکنش‌ها</div>
       <AnimatedList className="transaction-list">
         {transactions.map((transaction) => (
           <AnimatedListItem key={transaction.id}>
@@ -67,8 +67,8 @@ export function TransactionDetailPage() {
   if (!transaction) return <div className="page-body"><PageHeader title="تراکنش پیدا نشد" backTo="/transactions" /><div className="empty-state"><h2>جزئیات این تراکنش در دسترس نیست</h2><p>با بازنشانی صفحه، داده‌های نمایشی از ابتدا بارگذاری می‌شوند.</p></div></div>;
 
   const date = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(transaction.createdAt));
-  const incoming = transaction.type === 'deposit_toman' || transaction.type === 'deposit_crypto';
-  const statusIcon = transaction.status === 'success' ? <CheckCircle2 size={24} /> : transaction.status === 'pending' ? <Clock3 size={24} /> : <XCircle size={24} />;
+  const credit = transaction.type === 'deposit_toman' || transaction.type === 'deposit_crypto' || transaction.type === 'trade';
+  const statusIcon = transaction.status === 'success' ? <CheckCircleIcon size={24} /> : transaction.status === 'pending' ? <ClockCircleIcon size={24} /> : <CloseCircleIcon size={24} />;
   const symbol = transaction.assetId === 'toman' ? 'تومان' : state.assets.find((asset) => asset.id === transaction.assetId)?.symbol ?? transaction.assetId.toUpperCase();
 
   return (
@@ -78,7 +78,7 @@ export function TransactionDetailPage() {
         <span className={`detail-status-icon status-${transaction.status}`}>{statusIcon}</span>
         <h2>{transaction.title}</h2>
         <span className={`detail-status status-${transaction.status}`}>{statusLabels[transaction.status]}</span>
-        <strong className={`detail-amount ${incoming ? 'change-positive' : ''}`}>{incoming ? '+' : transaction.type === 'trade' ? '↔' : '−'}{formatFaNumber(transaction.amount, { maximumFractionDigits: 8 })} <small>{symbol}</small></strong>
+        <strong className={`detail-amount ${credit ? 'change-positive' : ''}`}>{credit ? '+' : '−'}{formatFaNumber(transaction.amount, { maximumFractionDigits: 8 })} <small>{symbol}</small></strong>
         <div className="detail-divider" />
         <div className="review-line"><span>نوع عملیات</span><strong>{typeLabels[transaction.type]}</strong></div>
         <div className="review-line"><span>تاریخ و ساعت</span><strong>{date}</strong></div>

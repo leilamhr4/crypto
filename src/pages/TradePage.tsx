@@ -1,7 +1,7 @@
-import { ArrowDownUp, ArrowLeftRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { TapButton, TapLink, TransitionStage } from '../components/AnimatedInteractions';
+import { CheckCircleIcon, ShieldCheckIcon, TransferHorizontalIcon, TransferVerticalIcon } from '../components/icons';
 import { PageHeader, CoinIcon } from '../components/UI';
 import { useLedger } from '../context/LedgerContext';
 import { formatCrypto, formatFaNumber, formatToman, parseAmount, validateAmount, type Transaction } from '../domain/ledger';
@@ -68,11 +68,11 @@ export function TradePage() {
         eyebrow={stage === 'result' ? undefined : 'تبدیل سریع دارایی'}
         backTo={stage === 'result' ? '/trade' : undefined}
       />
-      {stage !== 'result' ? <div className="trade-assurance"><ShieldCheck size={18} /><span>بدون دفتر سفارش · اجرای شبیه‌سازی‌شده</span></div> : null}
+      {stage !== 'result' ? <div className="trade-assurance"><ShieldCheckIcon size={18} /><span>بدون دفتر سفارش · اجرای شبیه‌سازی‌شده</span></div> : null}
       <TransitionStage stage={stage}>
       {stage === 'result' && completed ? (
         <div className="result-card card-surface">
-          <motion.span className="result-icon success" initial={{ scale: 0.72, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 22 }}><CheckCircle2 size={31} /></motion.span>
+          <motion.span className="result-icon success" initial={{ scale: 0.72, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 22 }}><CheckCircleIcon size={31} /></motion.span>
           <h2>معامله با موفقیت انجام شد</h2>
           <p>{formatCrypto(completed.fromAmount ?? 0)} {from.symbol} به {formatCrypto(completed.toAmount ?? 0)} {to.symbol} تبدیل شد.</p>
           <div className="result-summary"><span>شناسه تراکنش</span><b>{completed.id}</b><span>وضعیت</span><b className="change-positive">موفق</b></div>
@@ -89,18 +89,18 @@ export function TradePage() {
             </select>
           </div>
           <span className="input-subline">≈ {formatToman(Number.isFinite(numericAmount) ? numericAmount * from.priceToman : 0)}</span>
-          <div className="swap-control"><span /><TapButton type="button" aria-label="جابه‌جایی دارایی‌ها" onClick={swapPair}><ArrowDownUp size={18} /></TapButton><span /></div>
+          <div className="swap-control"><span /><TapButton type="button" aria-label="جابه‌جایی دارایی‌ها" onClick={swapPair}><TransferVerticalIcon size={18} /></TapButton><span /></div>
           <div className="form-label-row"><label>دریافت می‌کنید</label><span>موجودی: {formatCrypto(to.balance)} {to.symbol}</span></div>
           <div className="trade-input-row receive-row"><div>{receiveAmount ? formatCrypto(receiveAmount) : '۰٫۰۰۰'}</div><select value={toId} onChange={(event) => { setToId(event.target.value); if (event.target.value === fromId) setFromId(toId); }} aria-label="دارایی دریافتی">
             {state.assets.map((asset) => <option value={asset.id} key={asset.id}>{asset.symbol}</option>)}
           </select></div>
           <div className="quote-details"><span>نرخ تبدیل</span><b>۱ {from.symbol} ≈ {formatCrypto(from.priceToman / to.priceToman)} {to.symbol}</b><span>کارمزد معامله</span><b>۰٫۲۵٪</b></div>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
-          <TapButton className="primary-button full-button" type="submit">بررسی معامله <ArrowLeftRight size={17} /></TapButton>
+          <TapButton className="primary-button full-button" type="submit">بررسی معامله <TransferHorizontalIcon size={17} /></TapButton>
         </form>
       ) : (
         <div className="review-card card-surface">
-          <div className="review-icon-pair"><CoinIcon asset={from} size="lg" /><ArrowLeftRight size={18} /><CoinIcon asset={to} size="lg" /></div>
+          <div className="review-icon-pair"><CoinIcon asset={from} size="lg" /><TransferHorizontalIcon size={18} /><CoinIcon asset={to} size="lg" /></div>
           <h2>تأیید معامله</h2>
           <p className="review-lead">لطفاً جزئیات تبدیل را پیش از تأیید بررسی کنید.</p>
           <div className="review-line"><span>پرداخت</span><strong>{formatCrypto(numericAmount)} {from.symbol}</strong></div>

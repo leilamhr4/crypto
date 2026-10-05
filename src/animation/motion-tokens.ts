@@ -10,6 +10,28 @@ export const stageTransition: Transition = {
   ease: 'easeOut',
 };
 
+export const loadingMotion = {
+  minimumIntroVisibleMs: 560,
+  visualEntrance: {
+    duration: 0.48,
+    ease: [0.16, 1, 0.3, 1],
+  } satisfies Transition,
+  traceDraw: {
+    duration: 0.88,
+    ease: [0.16, 1, 0.3, 1],
+  } satisfies Transition,
+  nodeTravel: {
+    duration: 2.4,
+    ease: 'easeInOut',
+    repeat: Infinity,
+    repeatType: 'reverse',
+  } satisfies Transition,
+  overlayExit: {
+    duration: 0.24,
+    ease: 'easeOut',
+  } satisfies Transition,
+};
+
 export const tapTransition: Transition = {
   type: 'spring',
   stiffness: 520,
@@ -22,6 +44,20 @@ export const layoutTransition: Transition = {
   stiffness: 420,
   damping: 34,
   mass: 0.7,
+};
+
+export const bottomNavTransition: Transition = {
+  type: 'spring',
+  stiffness: 500,
+  damping: 40,
+  mass: 0.65,
+};
+
+export const allocationMotion = {
+  card: { duration: 0.2, ease: 'easeOut' } satisfies Transition,
+  arc: { duration: 0.52, ease: [0.16, 1, 0.3, 1] } satisfies Transition,
+  selection: { duration: 0.18, ease: 'easeOut' } satisfies Transition,
+  arcStaggerSeconds: 0.045,
 };
 
 export const routeVariants: Variants = {
