@@ -30,10 +30,9 @@ export function MarketPage() {
       </div>
       <div className="market-table-head"><span>دارایی</span><TapButton onClick={() => setSort(sort === 'value' ? 'change' : 'value')}>{sort === 'value' ? 'ارزش دارایی' : 'تغییر روزانه'} <ArrowDown size={13} /></TapButton></div>
       <AnimatedList className="market-list">
-        {assets.map((asset, index) => (
+        {assets.map((asset) => (
           <AnimatedListItem className="market-asset-card" key={asset.id}>
             <AssetRow asset={asset} compact />
-            <span className="market-rank">{formatFaNumber(index + 1)}</span>
           </AnimatedListItem>
         ))}
         {!assets.length ? <AnimatedListItem key="empty-market" className="empty-state compact-empty"><h2>نتیجه‌ای پیدا نشد</h2><p>عبارت دیگری را امتحان کنید.</p></AnimatedListItem> : null}
