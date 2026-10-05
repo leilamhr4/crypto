@@ -1,7 +1,8 @@
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AltArrowDownIcon, ArrowDownToLineIcon, ArrowRightUpIcon, ArrowUpFromLineIcon, Card2Icon, EyeClosedIcon, EyeIcon, HistoryIcon, MagnifierIcon, QuestionCircleIcon, SettingsIcon, TransferHorizontalIcon } from '../components/icons';
+import { AltArrowDownIcon, ArrowRightUpIcon, Card2Icon, EyeClosedIcon, EyeIcon, HistoryIcon, MagnifierIcon, QuestionCircleIcon, SettingsIcon, TransferHorizontalIcon } from '../components/icons';
+import { Deposit3DIcon, Trade3DIcon, Transactions3DIcon, Withdraw3DIcon } from '../components/QuickActionIcons';
 import { WalletSkeleton } from '../components/LoadingStates';
 import { AssetRow, CoinIcon, EmptyState, Sparkline } from '../components/UI';
 import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
@@ -17,10 +18,10 @@ const filters = [
 ] as const;
 
 const quickActions = [
-  { label: 'واریز', icon: ArrowDownToLineIcon, to: '/deposit/crypto' },
-  { label: 'برداشت', icon: ArrowUpFromLineIcon, to: '/withdraw/crypto' },
-  { label: 'معامله', icon: TransferHorizontalIcon, to: '/trade' },
-  { label: 'تراکنش‌ها', icon: HistoryIcon, to: '/transactions' },
+  { label: 'واریز', icon: Deposit3DIcon, to: '/deposit/crypto' },
+  { label: 'برداشت', icon: Withdraw3DIcon, to: '/withdraw/crypto' },
+  { label: 'معامله', icon: Trade3DIcon, to: '/trade' },
+  { label: 'تراکنش‌ها', icon: Transactions3DIcon, to: '/transactions' },
 ];
 
 const allocationAssets = [
@@ -34,91 +35,46 @@ const allocationDonutCircumference = 2 * Math.PI * 34;
 const allocationDonutGap = 2.2;
 const allocationDonutLength = allocationDonutCircumference - allocationDonutGap * allocationAssets.length;
 
-function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number; maximumFractionDigits: number }) {
+function AnimatedBalanceAmount({
+  value,
+  unit,
+  maximumFractionDigits,
+}: {
+  value: number;
+  unit: 'toman' | 'usdt';
+  maximumFractionDigits: number;
+}) {
   const prefersReducedMotion = useReducedMotion();
-  const amount = useMotionValue(0);
-  const initialValue = useRef(value);
-  const hasFinishedInitialCount = useRef(false);
-  const [displayedAmount, setDisplayedAmount] = useState(() =>
-    formatFaNumber(0, { maximumFractionDigits }),
-  );
-  const displayedAmountRef = useRef(displayedAmount);
-  const formattedAmount = useTransform(amount, (current) =>
-    formatFaNumber(current, { maximumFractionDigits }),
-  );
+  const animatedAmount = useMotionValue(value);
+  const formattedAmount = useTransform(animatedAmount, (current) => formatFaNumber(current, { maximumFractionDigits }));
+  const previousUnit = useRef(unit);
 
   useEffect(() => {
-    let lastDisplayedAt = Number.NEGATIVE_INFINITY;
-    const unsubscribe = formattedAmount.on('change', (nextAmount) => {
-      const now = performance.now();
-      if (nextAmount === displayedAmountRef.current || now - lastDisplayedAt < 34) return;
+    const unitChanged = previousUnit.current !== unit;
+    previousUnit.current = unit;
 
-      lastDisplayedAt = now;
-      displayedAmountRef.current = nextAmount;
-      setDisplayedAmount(nextAmount);
-    });
-
-    return unsubscribe;
-  }, [formattedAmount]);
-
-  useEffect(() => {
-    if (hasFinishedInitialCount.current || value !== initialValue.current || prefersReducedMotion) {
-      hasFinishedInitialCount.current = true;
-      amount.set(value);
-      const finalAmount = formatFaNumber(value, { maximumFractionDigits });
-      displayedAmountRef.current = finalAmount;
-      setDisplayedAmount(finalAmount);
+    if (prefersReducedMotion || unitChanged) {
+      animatedAmount.set(value);
       return;
     }
 
-    const controls = animate(amount, value, {
-      duration: 1.45,
-      delay: 0.1,
-      ease: [0.42, 0, 0.2, 1],
-      onComplete: () => {
-        hasFinishedInitialCount.current = true;
-        const finalAmount = formatFaNumber(value, { maximumFractionDigits });
-        displayedAmountRef.current = finalAmount;
-        setDisplayedAmount(finalAmount);
-      },
+    const controls = animate(animatedAmount, value, {
+      duration: 0.52,
+      ease: [0.22, 1, 0.36, 1],
     });
 
     return () => controls.stop();
-  }, [amount, maximumFractionDigits, prefersReducedMotion, value]);
+  }, [animatedAmount, prefersReducedMotion, unit, value]);
 
   return (
-    <motion.strong
-      aria-live="off"
-      initial={{ opacity: 0.78, y: 3 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.42, 0, 0.2, 1] }}
-      style={{ fontVariantNumeric: 'tabular-nums' }}
-    >
-      <span style={{ display: 'inline-grid', lineHeight: 1 }}>
-        <AnimatePresence initial={false}>
-          <motion.span
-            key={displayedAmount}
-            initial={{ opacity: 0, y: 1.5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{
-              opacity: 0,
-              y: -1,
-              transition: {
-                opacity: { duration: 0.055, ease: 'easeIn' },
-                y: { duration: 0.075, ease: 'easeIn' },
-              },
-            }}
-            transition={{
-              opacity: { duration: 0.055, ease: 'easeOut' },
-              y: { duration: 0.085, ease: [0.22, 1, 0.36, 1] },
-            }}
-            style={{ gridArea: '1 / 1', whiteSpace: 'nowrap' }}
-          >
-            {displayedAmount}
-          </motion.span>
-        </AnimatePresence>
+    <>
+      <motion.strong aria-hidden="true" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {formattedAmount}
+      </motion.strong>
+      <span className="visually-hidden" aria-live="off">
+        {formatFaNumber(value, { maximumFractionDigits })}
       </span>
-    </motion.strong>
+    </>
   );
 }
 
@@ -191,6 +147,7 @@ export function WalletPage() {
             ) : (
               <AnimatedBalanceAmount
                 value={mainAmount}
+                unit={state.unit}
                 maximumFractionDigits={state.unit === 'toman' ? 0 : 2}
               />
             )}
@@ -276,7 +233,7 @@ export function WalletPage() {
         <div className="quick-actions">
           {quickActions.map(({ label, icon: Icon, to }) => (
             <TapLink to={to} className="quick-action" key={label}>
-              <span><Icon size={23} strokeWidth={1.7} /></span>
+              <span><Icon className="quick-action__icon" /></span>
               <small>{label}</small>
             </TapLink>
           ))}
@@ -305,7 +262,7 @@ export function WalletPage() {
             </TapButton>
           ))}
         </div>
-        <AnimatedList className="asset-list">
+        <AnimatedList className="asset-list" withPresence>
           {visibleAssets.map((asset) => (
             <AnimatedListItem key={asset.id}>
               <AssetRow asset={asset} />
@@ -408,7 +365,7 @@ function WalletEmptyPreview() {
         </div>
         <div className="empty-total"><span>مجموع دارایی</span><strong>۰ <small>تومان</small></strong></div>
         <div className="empty-shortcuts">
-          {quickActions.filter(({ label }) => label === 'معامله' || label === 'واریز').map(({ label, icon: Icon, to }) => <TapLink to={to} key={label}><Icon size={21} /><span>{label}</span></TapLink>)}
+          {quickActions.filter(({ label }) => label === 'معامله' || label === 'واریز').map(({ label, icon: Icon, to }) => <TapLink to={to} key={label}><span className="empty-shortcuts__icon-shell"><Icon className="empty-shortcuts__icon" /></span><span>{label}</span></TapLink>)}
         </div>
       </section>
       <section className="wallet-panel empty-wallet-panel">

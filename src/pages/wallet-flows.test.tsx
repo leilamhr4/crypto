@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -30,6 +30,23 @@ function renderPage(page: ReactNode, path = '/wallet') {
 }
 
 describe('wallet UI interactions', () => {
+  it('shows a resolved route without a blocking first-load overlay', () => {
+    render(
+      <MemoryRouter initialEntries={['/wallet']}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/wallet" element={<h2>کیف پول آماده</h2>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('کیف پول آماده')).toBeVisible();
+    expect(document.querySelector('.first-load-overlay')).not.toBeInTheDocument();
+    expect(document.querySelector('.route-content')).not.toHaveAttribute('inert');
+    expect(document.querySelector('.bottom-nav')).not.toHaveAttribute('inert');
+  });
+
   it('hides the total balance from the dashboard', async () => {
     const user = userEvent.setup();
     renderPage(<WalletPage />);
@@ -42,12 +59,19 @@ describe('wallet UI interactions', () => {
 
   it('switches the dashboard unit and collapses the allocation chart', async () => {
     const user = userEvent.setup();
-    renderPage(<WalletPage />);
+    const { container } = renderPage(<WalletPage />);
 
     await user.click(screen.getByRole('button', { name: 'تتر' }));
     expect(screen.getByRole('button', { name: 'تتر' })).toHaveClass('selected');
-    await user.click(screen.getByRole('button', { name: 'بستن' }));
-    expect(screen.getByRole('button', { name: /نمودار تفکیک دارایی/ })).toHaveAttribute('aria-expanded', 'false');
+    const tetherLegend = container.querySelectorAll('.allocation-legend-item')[1];
+    expect(tetherLegend).not.toBeNull();
+    await user.click(tetherLegend!);
+    await waitFor(() => expect(container.querySelector('.allocation-donut-reading small')).toHaveTextContent('تتر'));
+    await user.click(screen.getByRole('button', { name: 'بستن نمودار' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'نمایش ترکیب دارایی‌ها' })).toHaveAttribute('aria-expanded', 'false');
+      expect(container.querySelector('.allocation-card')).not.toBeInTheDocument();
+    });
   });
 
   it('filters the asset list by gainers and search text', async () => {
@@ -55,11 +79,23 @@ describe('wallet UI interactions', () => {
     renderPage(<WalletPage />);
 
     await user.click(screen.getByRole('button', { name: 'سودده' }));
-    expect(document.querySelectorAll('.asset-row')).toHaveLength(3);
+    await waitFor(() => expect(document.querySelectorAll('.asset-row')).toHaveLength(3));
 
     await user.type(screen.getByLabelText('جست‌وجوی دارایی'), 'SOL');
-    expect(document.querySelectorAll('.asset-row')).toHaveLength(1);
+    await waitFor(() => expect(document.querySelectorAll('.asset-row')).toHaveLength(1));
     expect(screen.getByText('سولانا')).toBeInTheDocument();
+  });
+
+  it('keeps filtered asset rows present briefly while they exit', async () => {
+    const { container } = renderPage(<WalletPage />);
+    const assetList = container.querySelector('.asset-list');
+    const search = container.querySelector<HTMLInputElement>('.search-field input');
+    expect(search).not.toBeNull();
+
+    fireEvent.change(search!, { target: { value: 'SOL' } });
+
+    expect(assetList?.querySelectorAll('.asset-row').length).toBeGreaterThan(1);
+    await waitFor(() => expect(assetList?.querySelectorAll('.asset-row')).toHaveLength(1));
   });
 
   it('shows the loading and empty wallet reference states on demand', () => {

@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion, type HTMLMotionProps } from 'motion/react';
 import { Link, NavLink } from 'react-router-dom';
-import { layoutTransition, listItemVariants, stageVariants, tapTransition } from '../animation/motion-tokens';
+import { layoutTransition, listItemExitTransition, listItemVariants, stageVariants, tapTransition } from '../animation/motion-tokens';
 
 const MotionLink = motion.create(Link);
 const MotionNavLink = motion.create(NavLink);
@@ -65,12 +65,16 @@ export function TransitionStage({
 export function AnimatedList({
   children,
   className,
+  withPresence = false,
 }: {
   children: ReactNode;
   className?: string;
+  withPresence?: boolean;
 }) {
   return (
-    <div className={className}>{children}</div>
+    <div className={className}>
+      {withPresence ? <AnimatePresence initial={false}>{children}</AnimatePresence> : children}
+    </div>
   );
 }
 
@@ -88,6 +92,13 @@ export function AnimatedListItem({
       variants={listItemVariants}
       initial="initial"
       animate="animate"
+      exit={{
+        opacity: 0,
+        height: 0,
+        y: -3,
+        transition: listItemExitTransition,
+      }}
+      style={{ overflow: 'hidden' }}
       transition={{ layout: layoutTransition }}
     >
       {children}

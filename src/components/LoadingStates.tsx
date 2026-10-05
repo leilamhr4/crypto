@@ -1,6 +1,3 @@
-import { motion, useReducedMotion } from 'motion/react';
-import { loadingMotion } from '../animation/motion-tokens';
-
 type RouteSkeletonKind =
   | 'market'
   | 'asset-detail'
@@ -13,54 +10,6 @@ type RouteSkeletonKind =
   | 'settings';
 
 const skeletonRows = [0, 1, 2, 3];
-
-export function InitialLoadingOverlay() {
-  const prefersReducedMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      className="first-load-overlay"
-      role="status"
-      aria-live="polite"
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={prefersReducedMotion ? { duration: 0 } : loadingMotion.overlayExit}
-    >
-      <motion.div
-        className="first-load-visual"
-        initial={prefersReducedMotion ? false : { opacity: 0, y: 6, scale: 0.99 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={prefersReducedMotion ? { duration: 0 } : loadingMotion.visualEntrance}
-        aria-hidden="true"
-      >
-        <svg className="first-load-flow" viewBox="0 0 144 112" fill="none">
-          <path className="first-load-trace-base" d="M18 64 C52 24 65 98 126 46" />
-          <motion.path
-            className="first-load-trace-active"
-            d="M18 64 C52 24 65 98 126 46"
-            initial={prefersReducedMotion ? false : { pathLength: 0, opacity: 0.65 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={prefersReducedMotion ? { duration: 0 } : loadingMotion.traceDraw}
-          />
-          <motion.circle
-            className="first-load-node"
-            r="2.5"
-            initial={prefersReducedMotion ? false : { cx: 18, cy: 64 }}
-            animate={prefersReducedMotion
-              ? { cx: 61.875, cy: 59.5 }
-              : {
-                  cx: [18, 29.9, 40.6, 51.03, 61.875, 73.98, 88.17, 105.24, 126],
-                  cy: [64, 53.9, 51.6, 54.75, 59.5, 65.46, 65.13, 64.08, 46],
-                }}
-            transition={prefersReducedMotion ? { duration: 0 } : loadingMotion.nodeTravel}
-          />
-        </svg>
-      </motion.div>
-      <span className="visually-hidden">در حال آماده‌سازی کیف پول</span>
-    </motion.div>
-  );
-}
 
 export function RouteLoadingSkeleton({ pathname }: { pathname: string }) {
   const routePathname = pathname.replace(/\/+$/, '') || '/';
