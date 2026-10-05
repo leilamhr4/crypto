@@ -1,42 +1,44 @@
-# راها — کیف پول رمزارزی در حالت تیره
+# Crypto Wallet
 
-نمونه‌ی رزومه‌ای موبایل‌محور با React، TypeScript و Vite. رابط فارسی و راست‌به‌چپ است و فقط تم تاریک دارد. همه‌ی موجودی‌ها و تراکنش‌ها ساختگی‌اند؛ سرور، احراز هویت و جابه‌جایی واقعی پول وجود ندارد.
+A mobile-first cryptocurrency wallet interface built with React, TypeScript, and Vite. The application is designed for Persian-language content and right-to-left navigation, with layouts that adapt to different screen sizes.
 
-## اجرا
+## Features
 
-نیازمند Node.js 22.22.2+ یا 24.15+:
+- Wallet overview with Toman and USDT balance views
+- Balance visibility control, asset allocation chart, and asset search and filtering
+- Market overview and individual asset pages with price charts
+- Asset trading, cryptocurrency and Toman deposit and withdrawal flows
+- Transaction history and transaction details
+- Account settings and payment card management
+- Motion feedback for navigation and interactions, with support for reduced-motion preferences
+
+## Requirements
+
+Use a Node.js version supported by the `engines` field in `package.json` (22.22.2+, 24.15.0+, or 26.0.0+).
+
+## Getting Started
 
 ```bash
 npm install
 npm run dev
 ```
 
-## بررسی پروژه
+Vite prints the local development URL after the server starts.
+
+## Available Scripts
 
 ```bash
-npm test
-npm run lint
-npm run build
+npm run dev      # Start the development server
+npm test         # Run the test suite
+npm run lint     # Run ESLint
+npm run build    # Type-check and create a production build
+npm run preview  # Serve the production build locally
 ```
 
-## انتشار روی Vercel
+## Deployment
 
-پروژه را به یک مخزن GitHub پوش کنید و در Vercel با گزینه‌ی **Add New → Project** همان مخزن را انتخاب کنید. Vercel، Vite را خودکار تشخیص می‌دهد؛ تنظیم خروجی جداگانه لازم نیست. فایل `vercel.json` مسیرهای داخلی React Router را برای refresh مستقیم به اپ بازنویسی می‌کند.
+The project can be deployed to Vercel. The included `vercel.json` rewrites application routes to the entry point so direct navigation and page refreshes work with React Router.
 
-## قابلیت‌های نسخه‌ی نمونه
+## Data and Integrations
 
-- داشبورد دارایی‌ها با نمایش تومان/تتر، مخفی‌کردن موجودی، نمودار تفکیک، جست‌وجو و فیلتر
-- بازار و صفحه‌ی جزئیات دارایی
-- تبدیل آزمایشی دارایی‌ها، واریز و برداشت رمزارز و تومان
-- سابقه و جزئیات تراکنش‌ها، کارت‌های نمونه، تنظیمات حساب
-- بازنشانی خودکار داده‌ها با بارگذاری مجدد صفحه
-
-## سیستم انیمیشن
-
-انیمیشن‌های رابط با **Motion for React** پیاده‌سازی می‌شوند. برای حفظ حس یکدست، زمان‌بندی‌ها و springها را در `src/animation/motion-tokens.ts` تغییر دهید.
-
-- برای بازخورد لمس، از `TapButton`، `TapLink` و `TapNavLink` در `src/components/AnimatedInteractions.tsx` استفاده کنید.
-- برای جابه‌جایی بین مرحله‌های یک فرایند، از `TransitionStage` استفاده کنید.
-- برای فهرست‌های قابل فیلتر یا تغییر ترتیب، از `AnimatedList` و `AnimatedListItem` استفاده کنید.
-- تنظیم سراسری، انیمیشن مسیرها و رعایت گزینه‌ی کاهش حرکت سیستم در `src/main.tsx` و `src/components/AppShell.tsx` قرار دارد.
-- چون رابط فقط برای لمس طراحی شده، انیمیشن hover اضافه نکنید. حرکت باید بازخورد یا تغییر وضعیت را روشن‌تر کند.
+The application currently runs without a backend. Balances, prices, cards, and transactions are initialized from local client-side data. Changes are held in memory and reset when the page reloads. Authentication, persistent storage, blockchain connectivity, and real-money transfers are not implemented.
