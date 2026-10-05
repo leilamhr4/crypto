@@ -5,6 +5,11 @@ export const routeTransition: Transition = {
   ease: 'easeOut',
 };
 
+export const flowModeTransition: Transition = {
+  duration: 0.24,
+  ease: [0.22, 1, 0.36, 1],
+};
+
 export const stageTransition: Transition = {
   duration: 0.18,
   ease: 'easeOut',
@@ -47,6 +52,12 @@ export const routeVariants: Variants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0, transition: routeTransition },
   exit: { opacity: 0, y: -4, transition: { duration: 0.14, ease: 'easeIn' } },
+};
+
+export const flowRouteVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+  exit: { opacity: 0, transition: { duration: 0.14, ease: 'easeIn' } },
 };
 
 export const stageVariants: Variants = {

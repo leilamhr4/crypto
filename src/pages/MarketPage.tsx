@@ -1,8 +1,8 @@
 import { AnimatedList, AnimatedListItem, TapButton } from '../components/AnimatedInteractions';
 import { ArrowDownIcon, ArrowDownToLineIcon, ArrowUpIcon, GraphUpIcon, MagnifierIcon, TransferHorizontalIcon, Tuning2Icon, Wallet2Icon } from '../components/icons';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AssetRow, CoinIcon, PageHeader, Sparkline } from '../components/UI';
+import { AssetRow, CoinIcon, PageHeader } from '../components/UI';
 import { useLedger } from '../context/LedgerContext';
 import { assetValueToman, formatCrypto, formatFaNumber, formatToman } from '../domain/ledger';
 
@@ -74,7 +74,7 @@ export function AssetDetailPage() {
         </div>
         <div className="detail-chart">
           <div className="detail-chart-heading"><span>روند قیمت</span><span className="detail-chart-period">۲۴ ساعت</span></div>
-          <Sparkline values={asset.sparkline} positive={positive} className="large-sparkline" area endpoint />
+          <AssetDetailChart values={asset.sparkline} positive={positive} />
           <div className="detail-chart-axis"><span>۲۴ ساعت پیش</span><span>اکنون</span></div>
         </div>
       </section>
@@ -99,5 +99,62 @@ export function AssetDetailPage() {
         <p>قیمت‌ها و موجودی این صفحه برای نمایش تجربه‌ی کیف پول شبیه‌سازی شده‌اند و به بازار زنده متصل نیستند.</p>
       </section>
     </div>
+  );
+}
+
+function AssetDetailChart({ values, positive }: { values: number[]; positive: boolean }) {
+  const gradientId = useId().replace(/:/g, '');
+  const width = 360;
+  const height = 136;
+  const safeValues = values.length ? values : [0];
+  const min = Math.min(...safeValues);
+  const range = Math.max(...safeValues) - min || 1;
+  const points = safeValues.map((value, index) => ({
+    x: 12 + (index / Math.max(safeValues.length - 1, 1)) * (width - 24),
+    y: 15 + (1 - (value - min) / range) * 91,
+  }));
+  const first = points[0]!;
+  const last = points[points.length - 1]!;
+  const linePath = points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+    const previous = points[index - 1]!;
+    const previousPrevious = points[index - 2] ?? previous;
+    const next = points[index + 1] ?? point;
+    const control1X = previous.x + (point.x - previousPrevious.x) / 6;
+    const control1Y = previous.y + (point.y - previousPrevious.y) / 6;
+    const control2X = point.x - (next.x - previous.x) / 6;
+    const control2Y = point.y - (next.y - previous.y) / 6;
+    return `${path} C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${point.x} ${point.y}`;
+  }, '');
+  const areaPath = `${linePath} L ${last.x} 126 L ${first.x} 126 Z`;
+
+  return (
+    <svg
+      className={`asset-detail-chart-svg ${positive ? 'positive' : 'negative'}`}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      role="img"
+      aria-label={`نمودار روند ${positive ? 'صعودی' : 'نزولی'} قیمت در ۲۴ ساعت گذشته`}
+    >
+      <defs>
+        <linearGradient id={`${gradientId}-area`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--chart-color)" stopOpacity=".2" />
+          <stop offset="72%" stopColor="var(--chart-color)" stopOpacity=".055" />
+          <stop offset="100%" stopColor="var(--chart-color)" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={`${gradientId}-line`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--chart-color)" stopOpacity=".64" />
+          <stop offset="52%" stopColor="var(--chart-color)" stopOpacity="1" />
+          <stop offset="100%" stopColor="var(--chart-color)" stopOpacity=".86" />
+        </linearGradient>
+      </defs>
+      {[26, 66, 106].map((y) => <line className="asset-detail-chart-grid" key={y} x1="8" x2={width - 8} y1={y} y2={y} />)}
+      <path className="asset-detail-chart-area" d={areaPath} fill={`url(#${gradientId}-area)`} />
+      <path className="asset-detail-chart-glow" d={linePath} />
+      <path className="asset-detail-chart-line" d={linePath} pathLength={1} stroke={`url(#${gradientId}-line)`} />
+      <circle className="asset-detail-chart-aura" cx={last.x} cy={last.y} r="10" />
+      <circle className="asset-detail-chart-ring" cx={last.x} cy={last.y} r="5.2" />
+      <circle className="asset-detail-chart-core" cx={last.x} cy={last.y} r="2.1" />
+    </svg>
   );
 }

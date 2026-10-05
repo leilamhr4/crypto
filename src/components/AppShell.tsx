@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Suspense, useLayoutEffect, useRef } from 'react';
 import { useLocation, useOutlet } from 'react-router-dom';
-import { bottomNavTransition, layoutTransition, routeVariants } from '../animation/motion-tokens';
+import { bottomNavTransition, flowRouteVariants, layoutTransition, routeVariants } from '../animation/motion-tokens';
 import { TapNavLink } from './AnimatedInteractions';
 import { ChartSquareIcon, TransferHorizontalIcon, UserCircleIcon, Wallet2Icon } from './icons';
 import { RouteLoadingSkeleton } from './LoadingStates';
@@ -20,6 +20,8 @@ export function AppShell() {
   const { pathname } = useLocation();
   const prefersReducedMotion = useReducedMotion();
   const routePathname = pathname.replace(/\/+$/, '') || '/';
+  const isMoneyFlowRoute = /^\/(deposit|withdraw)\/(crypto|toman)$/.test(routePathname);
+  const activeRouteVariants = isMoneyFlowRoute ? flowRouteVariants : routeVariants;
   const outlet = useOutlet();
   const routeContentRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -45,7 +47,7 @@ export function AppShell() {
             <motion.div
               key={pathname}
               className="route-screen"
-              variants={routeVariants}
+              variants={activeRouteVariants}
               initial="initial"
               animate="animate"
               exit="exit"
