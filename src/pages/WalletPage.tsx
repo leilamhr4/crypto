@@ -229,9 +229,10 @@ export function WalletPage() {
               </div>
               <div className="allocation-legend" role="group" aria-label="برجسته‌کردن سهم هر دارایی">
                 {allocationAssets.map((asset) => (
-                  <button
+                  <TapButton
                     key={asset.id}
                     type="button"
+                    tapScale={0.985}
                     className={`allocation-legend-item ${selectedAllocationId === asset.id ? 'selected' : ''} ${focusedAllocationId === asset.id ? 'focused' : ''}`}
                     aria-pressed={selectedAllocationId === asset.id}
                     onFocus={() => setFocusedAllocationId(asset.id)}
@@ -248,7 +249,7 @@ export function WalletPage() {
                   >
                     <span className="allocation-name"><span className={`allocation-dot ${asset.id}`} aria-hidden="true" />{asset.name}</span>
                     <b>{formatFaNumber(asset.percent)}٪</b>
-                  </button>
+                  </TapButton>
                 ))}
               </div>
             </div>

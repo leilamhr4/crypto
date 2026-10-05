@@ -6,13 +6,18 @@ import { layoutTransition, listItemVariants, stageVariants, tapTransition } from
 const MotionLink = motion.create(Link);
 const MotionNavLink = motion.create(NavLink);
 
-export function TapButton({ children, disabled, ...props }: HTMLMotionProps<'button'>) {
+export function TapButton({
+  children,
+  disabled,
+  tapScale = 0.97,
+  ...props
+}: HTMLMotionProps<'button'> & { tapScale?: number }) {
   const prefersReducedMotion = useReducedMotion();
   return (
     <motion.button
       {...props}
       disabled={disabled}
-      whileTap={disabled || prefersReducedMotion ? undefined : { scale: 0.97 }}
+      whileTap={disabled || prefersReducedMotion ? undefined : { scale: tapScale }}
       transition={tapTransition}
     >
       {children}
