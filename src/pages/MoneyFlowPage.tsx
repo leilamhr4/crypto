@@ -1,10 +1,11 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { ArrowDownToLineIcon, ArrowUpFromLineIcon, CheckCircleIcon, ClockCircleIcon, CopyIcon, QrCodeIcon, ShieldCheckIcon, TransferHorizontalIcon } from '../components/icons';
 import { useLocation } from 'react-router-dom';
 import { TapButton, TapLink, TransitionStage } from '../components/AnimatedInteractions';
 import { PageHeader } from '../components/UI';
 import { useLedger } from '../context/LedgerContext';
+import { flowModeTransition } from '../animation/motion-tokens';
 import { formatCrypto, formatFaNumber, formatToman, parseAmount, validateAmount, type Transaction, type TransactionType } from '../domain/ledger';
 
 type Stage = 'form' | 'review' | 'result';
@@ -27,6 +28,7 @@ const demoAddress = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
 
 export function MoneyFlowPage() {
   const { pathname } = useLocation();
+  const prefersReducedMotion = useReducedMotion();
   const config = flows[pathname] ?? flows['/deposit/crypto']!;
   const { state, dispatch } = useLedger();
   const [assetId, setAssetId] = useState('btc');
@@ -134,7 +136,19 @@ export function MoneyFlowPage() {
           ['/withdraw/crypto', 'برداشت رمزارز'],
           ['/deposit/toman', 'واریز تومان'],
           ['/withdraw/toman', 'برداشت تومان'],
-        ].map(([to, label]) => <TapLink to={to!} className={pathname === to ? 'active' : ''} aria-current={pathname === to ? 'page' : undefined} key={to}>{label}</TapLink>)}
+        ].map(([to, label]) => (
+          <TapLink to={to!} className={pathname === to ? 'active' : ''} aria-current={pathname === to ? 'page' : undefined} key={to}>
+            {pathname === to ? (
+              <motion.span
+                layoutId="flow-mode-active-indicator"
+                className="flow-mode-indicator"
+                transition={prefersReducedMotion ? { duration: 0.01 } : flowModeTransition}
+                aria-hidden="true"
+              />
+            ) : null}
+            <span className="flow-mode-label">{label}</span>
+          </TapLink>
+        ))}
       </nav>
       <div className="flow-stepper" aria-label="مراحل درخواست">
         <span className={stage === 'form' ? 'current' : 'complete'} aria-current={stage === 'form' ? 'step' : undefined}>۱ اطلاعات</span><i />

@@ -1,8 +1,7 @@
-import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AltArrowDownIcon, ArrowRightUpIcon, Card2Icon, EyeClosedIcon, EyeIcon, HistoryIcon, MagnifierIcon, QuestionCircleIcon, SettingsIcon, TransferHorizontalIcon } from '../components/icons';
-import { Deposit3DIcon, Trade3DIcon, Transactions3DIcon, Withdraw3DIcon } from '../components/QuickActionIcons';
 import { WalletSkeleton } from '../components/LoadingStates';
 import { AssetRow, CoinIcon, EmptyState, Sparkline } from '../components/UI';
 import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
@@ -18,11 +17,11 @@ const filters = [
 ] as const;
 
 const quickActions = [
-  { label: 'واریز', icon: Deposit3DIcon, to: '/deposit/crypto' },
-  { label: 'برداشت', icon: Withdraw3DIcon, to: '/withdraw/crypto' },
-  { label: 'معامله', icon: Trade3DIcon, to: '/trade' },
-  { label: 'تراکنش‌ها', icon: Transactions3DIcon, to: '/transactions' },
-];
+  { label: 'واریز', icon: '/quick-actions/pastel-deposit.png', to: '/deposit/crypto' },
+  { label: 'برداشت', icon: '/quick-actions/pastel-withdraw.png', to: '/withdraw/crypto' },
+  { label: 'معامله', icon: '/quick-actions/pastel-trade.png', to: '/trade' },
+  { label: 'تراکنش‌ها', icon: '/quick-actions/pastel-transactions.png', to: '/transactions' },
+] as const;
 
 const allocationAssets = [
   { id: 'bitcoin', name: 'بیت‌کوین', percent: 44 },
@@ -34,47 +33,108 @@ const allocationTotalPercent = allocationAssets.reduce((total, asset) => total +
 const allocationDonutCircumference = 2 * Math.PI * 42;
 const allocationDonutGap = 2.8;
 const allocationDonutLength = allocationDonutCircumference - allocationDonutGap * allocationAssets.length;
+const balanceSwitchTransition = { type: 'spring' as const, stiffness: 480, damping: 40, mass: 0.58 };
+const balanceValueTransition = { duration: 0.24, ease: 'easeOut' as const };
 
-function AnimatedBalanceAmount({
+function isPersianDigit(character: string) {
+  return character >= '۰' && character <= '۹';
+}
+
+function CurrencySwap({
+  unit,
+  prefersReducedMotion,
+  className = '',
+  children,
+}: {
+  unit: 'toman' | 'usdt';
+  prefersReducedMotion: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className={`currency-swap ${className}`} dir="rtl">
+      <AnimatePresence initial={false} mode="sync">
+        <motion.span
+          key={unit}
+          className="currency-swap-value"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 5, filter: 'blur(1.1px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={prefersReducedMotion
+            ? { opacity: 0, transition: { duration: 0.01 } }
+            : { opacity: 0, y: -4, filter: 'blur(1px)', transition: { duration: 0.14, ease: 'easeIn' } }}
+          transition={prefersReducedMotion ? { duration: 0.01 } : balanceValueTransition}
+        >
+          {children}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
+function BalanceAmount({
   value,
   unit,
+  hidden,
   maximumFractionDigits,
 }: {
   value: number;
   unit: 'toman' | 'usdt';
+  hidden: boolean;
   maximumFractionDigits: number;
 }) {
   const prefersReducedMotion = useReducedMotion();
-  const animatedAmount = useMotionValue(value);
-  const formattedAmount = useTransform(animatedAmount, (current) => formatFaNumber(current, { maximumFractionDigits }));
-  const previousUnit = useRef(unit);
+  const formatted = formatFaNumber(value, { maximumFractionDigits });
+  const previous = useRef<{ formatted: string; unit: 'toman' | 'usdt' } | null>(null);
+  const previousFormatted = previous.current?.unit === unit ? previous.current.formatted : null;
+  const previousCharacters = Array.from(previousFormatted ?? '');
+  const currentCharacters = Array.from(formatted);
+  const balanceChanged = previousFormatted !== null && previousFormatted !== formatted;
 
   useEffect(() => {
-    const unitChanged = previousUnit.current !== unit;
-    previousUnit.current = unit;
-
-    if (prefersReducedMotion || unitChanged) {
-      animatedAmount.set(value);
-      return;
-    }
-
-    const controls = animate(animatedAmount, value, {
-      duration: 0.52,
-      ease: [0.22, 1, 0.36, 1],
-    });
-
-    return () => controls.stop();
-  }, [animatedAmount, prefersReducedMotion, unit, value]);
+    previous.current = { formatted, unit };
+  }, [formatted, unit]);
 
   return (
-    <>
-      <motion.strong aria-hidden="true" style={{ fontVariantNumeric: 'tabular-nums' }}>
-        {formattedAmount}
-      </motion.strong>
-      <span className="visually-hidden" aria-live="off">
-        {formatFaNumber(value, { maximumFractionDigits })}
+    <strong className="balance-amount">
+      <span className="balance-number-intro" aria-hidden="true">
+        {hidden ? (
+          '••••••••'
+        ) : (
+          <span className="balance-number" dir="ltr">
+            {currentCharacters.map((character, index) => {
+              const placeFromRight = currentCharacters.length - index - 1;
+              const previousCharacter = previousCharacters[previousCharacters.length - placeFromRight - 1];
+              const animateDigit = balanceChanged
+                && !prefersReducedMotion
+                && isPersianDigit(character)
+                && character !== previousCharacter;
+
+              return (
+                <span className="balance-character-slot" key={`place-${placeFromRight}`}>
+                  {animateDigit ? (
+                    <AnimatePresence initial={false}>
+                      <motion.span
+                        key={character}
+                        className="balance-character-visual"
+                        initial={{ opacity: 0.28, filter: 'blur(1.5px)' }}
+                        animate={{ opacity: 1, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, filter: 'blur(1.5px)', transition: { duration: 0.18, ease: 'easeOut' } }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                      >
+                        {character}
+                      </motion.span>
+                    </AnimatePresence>
+                  ) : character}
+                </span>
+              );
+            })}
+          </span>
+        )}
       </span>
-    </>
+      <span className="visually-hidden" aria-live="off">
+        {hidden ? 'موجودی مخفی' : formatted}
+      </span>
+    </strong>
   );
 }
 
@@ -135,31 +195,46 @@ export function WalletPage() {
               </TapButton>
             </div>
             <div className="balance-switch" role="group" aria-label="واحد نمایش موجودی">
-              <TapButton className={state.unit === 'usdt' ? 'selected' : ''} aria-pressed={state.unit === 'usdt'} onClick={() => dispatch({ type: 'unit/changed', unit: 'usdt' })}>تتر</TapButton>
-              <TapButton className={state.unit === 'toman' ? 'selected' : ''} aria-pressed={state.unit === 'toman'} onClick={() => dispatch({ type: 'unit/changed', unit: 'toman' })}>تومان</TapButton>
+              <TapButton className={state.unit === 'usdt' ? 'selected' : ''} aria-pressed={state.unit === 'usdt'} onClick={() => dispatch({ type: 'unit/changed', unit: 'usdt' })}>
+                {state.unit === 'usdt' ? <motion.span className="balance-switch-indicator" layoutId="wallet-balance-unit-indicator" initial={false} transition={prefersReducedMotion ? { duration: 0.01 } : balanceSwitchTransition} aria-hidden="true" /> : null}
+                <span className="balance-switch-label">تتر</span>
+              </TapButton>
+              <TapButton className={state.unit === 'toman' ? 'selected' : ''} aria-pressed={state.unit === 'toman'} onClick={() => dispatch({ type: 'unit/changed', unit: 'toman' })}>
+                {state.unit === 'toman' ? <motion.span className="balance-switch-indicator" layoutId="wallet-balance-unit-indicator" initial={false} transition={prefersReducedMotion ? { duration: 0.01 } : balanceSwitchTransition} aria-hidden="true" /> : null}
+                <span className="balance-switch-label">تومان</span>
+              </TapButton>
             </div>
           </div>
 
           <div className="total-balance">
             <div className="balance-value-row" dir="rtl">
-            {state.balanceHidden ? (
-              <strong>••••••••</strong>
-            ) : (
-              <AnimatedBalanceAmount
-                value={mainAmount}
-                unit={state.unit}
-                maximumFractionDigits={state.unit === 'toman' ? 0 : 2}
-              />
-            )}
-              <span className="balance-unit">{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
+              <CurrencySwap unit={state.unit} prefersReducedMotion={Boolean(prefersReducedMotion)} className="balance-value-swap">
+                <BalanceAmount
+                  value={mainAmount}
+                  unit={state.unit}
+                  hidden={state.balanceHidden}
+                  maximumFractionDigits={state.unit === 'toman' ? 0 : 2}
+                />
+                <span className="balance-unit">{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
+              </CurrencySwap>
             </div>
-            <p className="available-balance">قابل استفاده: <b>{state.balanceHidden ? '••••••' : formatFaNumber(availableAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}</b> {state.unit === 'toman' ? 'تومان' : 'USDT'}</p>
+            <p className="available-balance">
+              قابل استفاده:{' '}
+              <CurrencySwap unit={state.unit} prefersReducedMotion={Boolean(prefersReducedMotion)}>
+                <b>{state.balanceHidden ? '••••••' : formatFaNumber(availableAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}</b>
+                <span>{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
+              </CurrencySwap>
+            </p>
           </div>
 
           <div className="performance-card">
             <div className="performance-copy">
               <span>سود یا ضرر کل دارایی</span>
-              <strong dir="rtl">+ {formatFaNumber(performanceAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })} {state.unit === 'toman' ? 'تومان' : 'USDT'}</strong>
+              <strong dir="rtl">
+                <CurrencySwap unit={state.unit} prefersReducedMotion={Boolean(prefersReducedMotion)}>
+                  + {formatFaNumber(performanceAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })} {state.unit === 'toman' ? 'تومان' : 'USDT'}
+                </CurrencySwap>
+              </strong>
               <small className="performance-period" dir="rtl"><ArrowRightUpIcon size={12} aria-hidden="true" /> ۲٫۴٪ نسبت به ماه گذشته</small>
             </div>
             <Sparkline values={[32, 35, 34, 38, 36, 39, 47, 48, 50, 61, 63, 74, 73, 82, 91]} positive className="wallet-performance-sparkline" />
@@ -231,9 +306,9 @@ export function WalletPage() {
           {expanded ? 'بستن نمودار' : 'نمایش ترکیب دارایی‌ها'}
         </TapButton>
         <div className="quick-actions">
-          {quickActions.map(({ label, icon: Icon, to }) => (
+          {quickActions.map(({ label, icon, to }) => (
             <TapLink to={to} className="quick-action" key={label}>
-              <span><Icon className="quick-action__icon" /></span>
+              <span><img src={icon} alt="" aria-hidden="true" className="quick-action__icon" draggable={false} /></span>
               <small>{label}</small>
             </TapLink>
           ))}
@@ -367,7 +442,7 @@ function WalletEmptyPreview() {
         </div>
         <div className="empty-total"><span>مجموع دارایی</span><strong>۰ <small>تومان</small></strong></div>
         <div className="empty-shortcuts">
-          {quickActions.filter(({ label }) => label === 'معامله' || label === 'واریز').map(({ label, icon: Icon, to }) => <TapLink to={to} key={label}><span className="empty-shortcuts__icon-shell"><Icon className="empty-shortcuts__icon" /></span><span>{label}</span></TapLink>)}
+          {quickActions.filter(({ label }) => label === 'معامله' || label === 'واریز').map(({ label, icon, to }) => <TapLink to={to} key={label}><span className="empty-shortcuts__icon-shell"><img src={icon} alt="" aria-hidden="true" className="empty-shortcuts__icon" draggable={false} /></span><span>{label}</span></TapLink>)}
         </div>
       </section>
       <section className="wallet-panel empty-wallet-panel">

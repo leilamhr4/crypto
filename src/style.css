@@ -273,6 +273,9 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   direction: ltr;
 }
 .balance-switch button {
+  position: relative;
+  display: grid;
+  place-items: center;
   flex: 1;
   padding: 0 5px;
   border: 0;
@@ -280,8 +283,20 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   color: var(--muted);
   background: transparent;
   font-size: 10px;
+  transition: color .18s ease;
 }
-.balance-switch button.selected { background: var(--navy-soft); color: var(--text); font-weight: 700; }
+.balance-switch button.selected { color: var(--text); font-weight: 700; }
+.balance-switch-indicator {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, .045);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .055), transparent 100%), var(--navy-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045), 0 2px 5px rgba(0, 0, 0, .16);
+  pointer-events: none;
+}
+.balance-switch-label { position: relative; z-index: 1; }
 .balance-switch button:focus-visible { outline-offset: -2px; }
 .total-balance {
   position: relative;
@@ -300,7 +315,19 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   gap: 7px;
   direction: rtl;
 }
-.balance-value-row strong { font-family: Inter, Vazirmatn, Tahoma, sans-serif; font-size: 27px; line-height: 1; font-weight: 700; letter-spacing: .15px; white-space: nowrap; }
+.currency-swap { display: inline-grid; vertical-align: middle; }
+.currency-swap-value { grid-area: 1 / 1; display: inline-block; white-space: nowrap; }
+.balance-value-swap .currency-swap-value { display: inline-flex; align-items: center; gap: 7px; }
+.balance-value-swap .balance-number-intro { animation: none; }
+.balance-value-row strong { font-family: Inter, Vazirmatn, Tahoma, sans-serif; font-size: 27px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .15px; white-space: nowrap; }
+.balance-number-intro { display: inline-block; animation: balance-number-intro 500ms cubic-bezier(.2,.65,.25,1) both; }
+.balance-number { display: inline-flex; direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+.balance-character-slot { display: inline-grid; vertical-align: baseline; line-height: inherit; }
+.balance-character-visual { grid-area: 1 / 1; display: inline-block; white-space: pre; }
+@keyframes balance-number-intro {
+  from { opacity: .58; filter: blur(1.8px); }
+  to { opacity: 1; filter: blur(0); }
+}
 .balance-unit { font-size: 10px; color: var(--muted); }
 .balance-visibility { width: 25px; height: 25px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--soft); }
 .available-balance {
@@ -441,9 +468,9 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 11px; direction: rtl; }
 .quick-action { display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--muted); }
 .quick-action > span { width: 64px; height: 64px; display: grid; place-items: center; border: 1px solid var(--line-soft); border-radius: 15px; background: linear-gradient(145deg, rgba(255,255,255,.025), transparent 58%), var(--surface); transition: background .18s ease, border-color .18s ease, color .18s ease; }
-.quick-action__icon { display: block; width: 42px; height: 42px; overflow: visible; filter: drop-shadow(0 2px 3px rgba(5, 12, 21, .24)); transition: transform .18s ease, filter .18s ease; }
+.quick-action__icon { display: block; width: 42px; height: 42px; object-fit: contain; filter: saturate(.7) opacity(.94) drop-shadow(0 2px 3px rgba(5, 12, 21, .24)); transition: transform .18s ease, filter .18s ease; }
 .quick-action:hover > span { border-color: var(--navy-line); background-color: var(--surface-raised); }
-.quick-action:hover .quick-action__icon { transform: translateY(-1px); filter: drop-shadow(0 4px 5px rgba(5, 12, 21, .32)); }
+.quick-action:hover .quick-action__icon { transform: translateY(-1px); filter: saturate(.7) opacity(.94) drop-shadow(0 4px 5px rgba(5, 12, 21, .32)); }
 .quick-action:focus-visible > span { outline: 2px solid var(--navy-text); outline-offset: 3px; }
 .quick-action:active > span { border-color: var(--stroke); background: var(--surface-raised); color: var(--text); }
 .quick-action small { font-size: 10px; }
@@ -546,6 +573,8 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .asset-row.compact .asset-metrics { min-height: 62px; padding: 5px 8px 25px; }
 .asset-row.compact .asset-sparkline { height: 22px; }
 .balance-card .wallet-performance-sparkline { width: auto; height: 42px; color: var(--navy-text); }
+.balance-card .wallet-performance-sparkline polyline { stroke-dasharray: 1; stroke-dashoffset: 1; animation: wallet-sparkline-draw 1100ms cubic-bezier(.37,0,.63,1) 40ms both; }
+@keyframes wallet-sparkline-draw { to { stroke-dashoffset: 0; } }
 .asset-name { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; overflow: hidden; font-size: 12px; }
 .asset-name strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--soft); }
 .asset-name > span { font-size: 11px; font-weight: 500; color: var(--muted); white-space: nowrap; }
@@ -599,7 +628,7 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .empty-shortcuts { position: absolute; top: 204px; left: 22px; right: 22px; display: grid; grid-template-columns: repeat(2,1fr); direction: rtl; }
 .empty-shortcuts a { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--soft); font-size: 9px; }
 .empty-shortcuts__icon-shell { width: 55px; height: 55px; display: grid; place-items: center; border: 1px solid var(--line-soft); border-radius: 15px; background: var(--surface); }
-.empty-shortcuts__icon { display: block; width: 38px; height: 38px; overflow: visible; filter: drop-shadow(0 2px 3px rgba(5, 12, 21, .24)); }
+.empty-shortcuts__icon { display: block; width: 38px; height: 38px; object-fit: contain; filter: saturate(.7) opacity(.94) drop-shadow(0 2px 3px rgba(5, 12, 21, .24)); }
 .empty-wallet-panel { min-height: calc(100dvh - 310px); }
 .empty-wallet-panel .muted-caption { color: var(--muted); font-size: 10px; }
 .empty-wallet-panel .empty-state { margin-top: 13px; min-height: 225px; }
@@ -833,8 +862,10 @@ a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .flow-stepper span.current { color: var(--text); font-weight: 700; }
 .flow-stepper i { height: 1px; flex: 1; background: var(--line); }
 .flow-mode { margin: -7px 0 13px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-.flow-mode a { min-height: 40px; padding: 5px 3px; display: grid; place-items: center; border: 1px solid var(--stroke); border-radius: 10px; color: var(--muted); background: var(--surface); font-size: 10px; line-height: 1.35; text-align: center; }
-.flow-mode a.active { border-color: var(--navy-line); color: var(--navy-text); background: var(--navy-soft); }
+.flow-mode a { position: relative; isolation: isolate; min-height: 40px; padding: 5px 3px; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--stroke); border-radius: 10px; color: var(--muted); background: var(--surface); font-size: 10px; line-height: 1.35; text-align: center; }
+.flow-mode a.active { border-color: transparent; color: var(--navy-text); background: transparent; }
+.flow-mode-indicator { position: absolute; z-index: 0; inset: 0; border: 1px solid var(--navy-line); border-radius: inherit; background: var(--navy-soft); pointer-events: none; }
+.flow-mode-label { position: relative; z-index: 1; }
 .amount-field { min-height: 49px; padding: 0 13px; display: flex; align-items: center; gap: 10px; }
 .amount-field input { width: 100%; min-width: 0; padding: 0; border: 0; outline: 0; color: var(--text); background: transparent; direction: ltr; text-align: right; font-size: 14px; }
 .ltr-field { text-align: left; }
