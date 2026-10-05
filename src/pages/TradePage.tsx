@@ -1,6 +1,7 @@
-import { ArrowDownUp, ArrowLeftRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { TapButton, TapLink, TransitionStage } from '../components/AnimatedInteractions';
+import { CheckCircleIcon, ShieldCheckIcon, TransferHorizontalIcon, TransferVerticalIcon } from '../components/icons';
 import { PageHeader, CoinIcon } from '../components/UI';
 import { useLedger } from '../context/LedgerContext';
 import { formatCrypto, formatFaNumber, formatToman, parseAmount, validateAmount, type Transaction } from '../domain/ledger';
@@ -60,27 +61,25 @@ export function TradePage() {
     setStage('result');
   }
 
-  if (stage === 'result' && completed) {
-    return (
-      <div className="page-body result-page">
-        <PageHeader title="نتیجه معامله" backTo="/trade" />
+  return (
+    <div className={`page-body ${stage === 'result' && completed ? 'result-page' : 'trade-page'}`}>
+      <PageHeader
+        title={stage === 'result' ? 'نتیجه معامله' : 'معامله'}
+        eyebrow={stage === 'result' ? undefined : 'تبدیل سریع دارایی'}
+        backTo={stage === 'result' ? '/trade' : undefined}
+      />
+      {stage !== 'result' ? <div className="trade-assurance"><ShieldCheckIcon size={18} /><span>بدون دفتر سفارش · اجرای شبیه‌سازی‌شده</span></div> : null}
+      <TransitionStage stage={stage}>
+      {stage === 'result' && completed ? (
         <div className="result-card card-surface">
-          <span className="result-icon success"><CheckCircle2 size={31} /></span>
+          <motion.span className="result-icon success" initial={{ scale: 0.72, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 360, damping: 22 }}><CheckCircleIcon size={31} /></motion.span>
           <h2>معامله با موفقیت انجام شد</h2>
           <p>{formatCrypto(completed.fromAmount ?? 0)} {from.symbol} به {formatCrypto(completed.toAmount ?? 0)} {to.symbol} تبدیل شد.</p>
           <div className="result-summary"><span>شناسه تراکنش</span><b>{completed.id}</b><span>وضعیت</span><b className="change-positive">موفق</b></div>
-          <Link to={`/transactions/${completed.id}`} className="secondary-button full-button">مشاهده جزئیات</Link>
-          <button className="text-button" onClick={() => { setAmount(''); setStage('form'); }}>معامله‌ی جدید</button>
+          <TapLink to={`/transactions/${completed.id}`} className="secondary-button full-button">مشاهده جزئیات</TapLink>
+          <TapButton className="text-button" onClick={() => { setAmount(''); setStage('form'); }}>معامله‌ی جدید</TapButton>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="page-body trade-page">
-      <PageHeader title="معامله" eyebrow="تبدیل سریع دارایی" />
-      <div className="trade-assurance"><ShieldCheck size={18} /><span>بدون دفتر سفارش · اجرای شبیه‌سازی‌شده</span></div>
-      {stage === 'form' ? (
+      ) : stage === 'form' ? (
         <form className="trade-card card-surface" onSubmit={continueToReview}>
           <div className="form-label-row"><label htmlFor="trade-amount">پرداخت می‌کنید</label><span>موجودی: {formatCrypto(from.balance)} {from.symbol}</span></div>
           <div className="trade-input-row">
@@ -90,29 +89,30 @@ export function TradePage() {
             </select>
           </div>
           <span className="input-subline">≈ {formatToman(Number.isFinite(numericAmount) ? numericAmount * from.priceToman : 0)}</span>
-          <div className="swap-control"><span /><button type="button" aria-label="جابه‌جایی دارایی‌ها" onClick={swapPair}><ArrowDownUp size={18} /></button><span /></div>
+          <div className="swap-control"><span /><TapButton type="button" aria-label="جابه‌جایی دارایی‌ها" onClick={swapPair}><TransferVerticalIcon size={18} /></TapButton><span /></div>
           <div className="form-label-row"><label>دریافت می‌کنید</label><span>موجودی: {formatCrypto(to.balance)} {to.symbol}</span></div>
           <div className="trade-input-row receive-row"><div>{receiveAmount ? formatCrypto(receiveAmount) : '۰٫۰۰۰'}</div><select value={toId} onChange={(event) => { setToId(event.target.value); if (event.target.value === fromId) setFromId(toId); }} aria-label="دارایی دریافتی">
             {state.assets.map((asset) => <option value={asset.id} key={asset.id}>{asset.symbol}</option>)}
           </select></div>
           <div className="quote-details"><span>نرخ تبدیل</span><b>۱ {from.symbol} ≈ {formatCrypto(from.priceToman / to.priceToman)} {to.symbol}</b><span>کارمزد معامله</span><b>۰٫۲۵٪</b></div>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
-          <button className="primary-button full-button" type="submit">بررسی معامله <ArrowLeftRight size={17} /></button>
+          <TapButton className="primary-button full-button" type="submit">بررسی معامله <TransferHorizontalIcon size={17} /></TapButton>
         </form>
       ) : (
         <div className="review-card card-surface">
-          <div className="review-icon-pair"><CoinIcon asset={from} size="lg" /><ArrowLeftRight size={18} /><CoinIcon asset={to} size="lg" /></div>
+          <div className="review-icon-pair"><CoinIcon asset={from} size="lg" /><TransferHorizontalIcon size={18} /><CoinIcon asset={to} size="lg" /></div>
           <h2>تأیید معامله</h2>
           <p className="review-lead">لطفاً جزئیات تبدیل را پیش از تأیید بررسی کنید.</p>
           <div className="review-line"><span>پرداخت</span><strong>{formatCrypto(numericAmount)} {from.symbol}</strong></div>
           <div className="review-line"><span>دریافت تقریبی</span><strong>{formatCrypto(receiveAmount)} {to.symbol}</strong></div>
           <div className="review-line"><span>ارزش معامله</span><strong>{formatToman(numericAmount * from.priceToman)}</strong></div>
           <div className="review-line"><span>کارمزد</span><strong>۰٫۲۵٪</strong></div>
-          <button className="primary-button full-button" onClick={confirmTrade}>تأیید و انجام معامله</button>
-          <button className="text-button" onClick={() => setStage('form')}>ویرایش اطلاعات</button>
+          <TapButton className="primary-button full-button" onClick={confirmTrade}>تأیید و انجام معامله</TapButton>
+          <TapButton className="text-button" onClick={() => setStage('form')}>ویرایش اطلاعات</TapButton>
         </div>
       )}
-      <p className="demo-note">این صفحه فقط برای نمایش نمونه ساخته شده است و سفارش واقعی ثبت نمی‌کند.</p>
+      </TransitionStage>
+      {stage !== 'result' ? <p className="demo-note">این صفحه فقط برای نمایش نمونه ساخته شده است و سفارش واقعی ثبت نمی‌کند.</p> : null}
     </div>
   );
 }

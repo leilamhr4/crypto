@@ -1,26 +1,31 @@
-import { BarChart3, ArrowLeftRight, CircleUserRound, WalletCards } from 'lucide-react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { Suspense, useLayoutEffect, useRef } from 'react';
+import { useLocation, useOutlet } from 'react-router-dom';
+import { bottomNavTransition, layoutTransition, routeVariants } from '../animation/motion-tokens';
+import { TapNavLink } from './AnimatedInteractions';
+import { ChartSquareIcon, TransferHorizontalIcon, UserCircleIcon, Wallet2Icon } from './icons';
+import { RouteLoadingSkeleton } from './LoadingStates';
 
 const tabs = [
-  { to: '/profile', label: 'پروفایل', icon: CircleUserRound, key: 'profile' },
-  { to: '/wallet', label: 'کیف پول', icon: WalletCards, key: 'wallet' },
-  { to: '/market', label: 'بازار', icon: BarChart3, key: 'market' },
-  { to: '/trade', label: 'معامله', icon: ArrowLeftRight, key: 'trade' },
+  { to: '/wallet', label: 'کیف پول', icon: Wallet2Icon, key: 'wallet' },
+  { to: '/market', label: 'بازار', icon: ChartSquareIcon, key: 'market' },
+  { to: '/trade', label: 'معامله', icon: TransferHorizontalIcon, key: 'trade' },
+  { to: '/profile', label: 'پروفایل', icon: UserCircleIcon, key: 'profile' },
 ];
 
-export function StatusBar() {
-  return (
-    <div className="status-bar" aria-label="وضعیت دستگاه">
-      <div className="status-icons" aria-hidden="true">
-        <svg viewBox="0 0 45 16"><path d="M3 13h3V9H3zm6 0h3V6H9zm6 0h3V3h-3zM23 5.5a7.5 7.5 0 0 1 11 0m-8.3 3a3.8 3.8 0 0 1 5.6 0M29.5 12.5h.1" fill="currentColor"/><rect x="37" y="3" width="15" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5"/><rect x="52.5" y="6" width="2" height="4" rx="1" fill="currentColor"/><rect x="39" y="5" width="10.5" height="6" rx="1" fill="currentColor"/></svg>
-      </div>
-      <span className="status-time">۹:۴۱</span>
-    </div>
-  );
-}
+// Flip this single switch to restore the original bottom navigation treatment.
+const refinedBottomNav = true;
 
 export function AppShell() {
   const { pathname } = useLocation();
+  const prefersReducedMotion = useReducedMotion();
+  const routePathname = pathname.replace(/\/+$/, '') || '/';
+  const outlet = useOutlet();
+  const routeContentRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (routeContentRef.current) routeContentRef.current.scrollTop = 0;
+  }, [pathname]);
+
   const activeKey = pathname.startsWith('/profile')
     ? 'profile'
     : pathname.startsWith('/market')
@@ -32,21 +37,41 @@ export function AppShell() {
   return (
     <div className="app-stage">
       <div className="phone-shell">
-        <StatusBar />
-        <main className="route-content">
-          <Outlet />
+        <main
+          className="route-content"
+          ref={routeContentRef}
+        >
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.div
+              key={pathname}
+              className="route-screen"
+              variants={routeVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <Suspense fallback={<RouteLoadingSkeleton pathname={routePathname} />}>
+                {outlet}
+              </Suspense>
+            </motion.div>
+          </AnimatePresence>
         </main>
-        <nav className="bottom-nav" aria-label="ناوبری اصلی">
+        <nav
+          className={`bottom-nav${refinedBottomNav ? ' bottom-nav--refined' : ''}`}
+          aria-label="ناوبری اصلی"
+        >
           {tabs.map(({ to, label, icon: Icon, key }) => (
-            <NavLink
+            <TapNavLink
               key={to}
               to={to}
+              tapScale={refinedBottomNav ? 0.985 : 0.96}
               className={`bottom-nav-item ${activeKey === key ? 'active' : ''}`}
               aria-current={activeKey === key ? 'page' : undefined}
             >
-              <span className="bottom-nav-icon"><Icon size={22} strokeWidth={1.8} /></span>
+              {activeKey === key ? <motion.span layoutId="bottom-nav-indicator" className="bottom-nav-indicator" transition={{ layout: prefersReducedMotion ? { duration: 0.01 } : refinedBottomNav ? bottomNavTransition : layoutTransition }} aria-hidden="true" /> : null}
+              <span className="bottom-nav-icon"><Icon size={refinedBottomNav ? 20 : 22} strokeWidth={1.8} /></span>
               <span>{label}</span>
-            </NavLink>
+            </TapNavLink>
           ))}
         </nav>
       </div>
