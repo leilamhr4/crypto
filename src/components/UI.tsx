@@ -12,8 +12,8 @@ const usdFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const walletTrendCycleMs = 9_000;
-const walletTrendReadoutMs = 1_980;
+const walletTrendCycleMs = 5_500;
+const walletTrendReadoutMs = 1_210;
 
 export function PageHeader({
   title,
