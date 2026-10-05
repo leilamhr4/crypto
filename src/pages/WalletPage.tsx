@@ -12,8 +12,8 @@ import {
   Search,
   Settings,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import { useMemo, useState } from 'react';
+import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AssetRow, CoinIcon, EmptyState, Sparkline } from '../components/UI';
 import { AnimatedList, AnimatedListItem, TapButton, TapLink } from '../components/AnimatedInteractions';
@@ -34,6 +34,36 @@ const quickActions = [
   { label: 'برداشت', icon: ArrowUpFromLine, to: '/withdraw/crypto' },
   { label: 'واریز', icon: ArrowDownToLine, to: '/deposit/crypto' },
 ];
+
+function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number; maximumFractionDigits: number }) {
+  const prefersReducedMotion = useReducedMotion();
+  const amount = useMotionValue(0);
+  const initialValue = useRef(value);
+  const hasFinishedInitialCount = useRef(false);
+  const formattedAmount = useTransform(amount, (current) =>
+    formatFaNumber(current, { maximumFractionDigits }),
+  );
+
+  useEffect(() => {
+    if (hasFinishedInitialCount.current || value !== initialValue.current || prefersReducedMotion) {
+      hasFinishedInitialCount.current = true;
+      amount.set(value);
+      return;
+    }
+
+    const controls = animate(amount, value, {
+      duration: 1,
+      ease: [0.16, 1, 0.3, 1],
+      onComplete: () => {
+        hasFinishedInitialCount.current = true;
+      },
+    });
+
+    return () => controls.stop();
+  }, [amount, prefersReducedMotion, value]);
+
+  return <motion.strong aria-live="off">{formattedAmount}</motion.strong>;
+}
 
 export function WalletPage() {
   const { state, dispatch } = useLedger();
@@ -99,13 +129,10 @@ export function WalletPage() {
             {state.balanceHidden ? (
               <strong>••••••••</strong>
             ) : (
-              <motion.strong
-                key={`${state.unit}-${mainAmount}`}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                {formatFaNumber(mainAmount, { maximumFractionDigits: state.unit === 'toman' ? 0 : 2 })}
-              </motion.strong>
+              <AnimatedBalanceAmount
+                value={mainAmount}
+                maximumFractionDigits={state.unit === 'toman' ? 0 : 2}
+              />
             )}
               <span className="balance-unit">{state.unit === 'toman' ? 'تومان' : 'USDT'}</span>
             </div>
