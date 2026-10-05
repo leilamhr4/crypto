@@ -52,8 +52,9 @@ function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number
     }
 
     const controls = animate(amount, value, {
-      duration: 1,
-      ease: [0.16, 1, 0.3, 1],
+      duration: 1.45,
+      delay: 0.1,
+      ease: [0.42, 0, 0.2, 1],
       onComplete: () => {
         hasFinishedInitialCount.current = true;
       },
@@ -62,7 +63,17 @@ function AnimatedBalanceAmount({ value, maximumFractionDigits }: { value: number
     return () => controls.stop();
   }, [amount, prefersReducedMotion, value]);
 
-  return <motion.strong aria-live="off">{formattedAmount}</motion.strong>;
+  return (
+    <motion.strong
+      aria-live="off"
+      initial={{ opacity: 0.78, y: 3 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.42, 0, 0.2, 1] }}
+      style={{ fontVariantNumeric: 'tabular-nums' }}
+    >
+      {formattedAmount}
+    </motion.strong>
+  );
 }
 
 export function WalletPage() {
